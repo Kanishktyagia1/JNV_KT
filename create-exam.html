@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create New Exam | JNV Result Manager</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            margin: 0;
+            background: #f4f7fb;
+            color: #1e293b;
+        }
+
+        .page-container {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-header h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .page-header p {
+            color: #64748b;
+        }
+
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            font-size: 19px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px;
+            border: 1px solid #dbe2ea;
+            border-radius: 9px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .subject-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .subject-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+        }
+
+        .subject-item input {
+            width: auto;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 9px;
+            padding: 13px 22px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 22px;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row,
+            .subject-list {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                padding: 22px;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container">
+
+        <a href="main-dashboard.html" class="back-link">
+            ← Back to Admin Dashboard
+        </a>
+
+        <div class="page-header">
+            <h1>Create New Exam</h1>
+            <p>Enter exam details to generate a new result record.</p>
+        </div>
+
+        <div class="form-card">
+
+            <form id="examForm">
+
+                <div class="form-section">
+
+                    <h2>Exam Details</h2>
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="examName">Exam Name</label>
+                            <input
+                                type="text"
+                                id="examName"
+                                placeholder="Example: First Term Examination"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="examYear">Academic Year</label>
+                            <input
+                                type="text"
+                                id="examYear"
+                                placeholder="Example: 2026-27"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="className">Class</label>
+
+                            <select id="className" required>
+                                <option value="">Select Class</option>
+                                <option value="6">Class 6</option>
+                                <option value="7">Class 7</option>
+                                <option value="8">Class 8</option>
+                                <option value="9">Class 9</option>
+                                <option value="10">Class 10</option>
+                                <option value="11">Class 11</option>
+                                <option value="12">Class 12</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="section">Section</label>
+
+                            <select id="section" required>
+                                <option value="">Select Section</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="form-section">
+
+                    <h2>Subjects</h2>
+
+                    <div class="subject-list" id="subjectList">
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="Physics">
+        Physics
+    </label>
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="Chemistry">
+        Chemistry
+    </label>
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="Mathematics">
+        Mathematics
+    </label>
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="English">
+        English
+    </label>
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="Biology">
+        Biology
+    </label>
+
+    <label class="subject-item">
+        <input type="checkbox" name="subjects" value="Hindi">
+        Hindi
+    </label>
+
+</div>
+
+<div style="margin-top: 18px;">
+    <button type="button" class="btn btn-secondary" id="addSubjectBtn">
+        + Add Custom Subject
+    </button>
+</div>
+
+                    <h2>Marks and Students</h2>
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="maxMarks">Maximum Marks per Subject</label>
+                            <input
+                                type="number"
+                                id="maxMarks"
+                                placeholder="Example: 100"
+                                min="1"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="studentCount">Number of Students</label>
+                            <input
+                                type="number"
+                                id="studentCount"
+                                placeholder="Example: 40"
+                                min="1"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="button-row">
+
+                    <button type="submit" class="btn btn-primary">
+                        Generate Result File
+                    </button>
+
+                    <button type="reset" class="btn btn-secondary">
+                        Clear Form
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+         <script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const examForm = document.getElementById("examForm");
+
+    const classSelect = document.getElementById("className");
+    const sectionSelect = document.getElementById("section");
+    const studentCountInput = document.getElementById("studentCount");
+
+    const addSubjectBtn = document.getElementById("addSubjectBtn");
+    const subjectList = document.getElementById("subjectList");
+
+
+    /* =========================
+       LOAD CLASSES FROM ADD CLASSES
+    ========================= */
+
+    const savedClasses =
+        JSON.parse(localStorage.getItem("jnv_classes")) || [];
+
+
+    /*
+       Class dropdown ko Add Classes
+       ke saved data ke according set karna
+    */
+
+    if (savedClasses.length > 0) {
+
+        classSelect.innerHTML =
+            `<option value="">Select Class</option>`;
+
+        const uniqueClasses = [];
+
+        savedClasses.forEach(function (classData) {
+
+            if (!uniqueClasses.includes(classData.className)) {
+                uniqueClasses.push(classData.className);
+            }
+
+        });
+
+        uniqueClasses.sort(function (a, b) {
+            return Number(a) - Number(b);
+        });
+
+        uniqueClasses.forEach(function (className) {
+
+            const option = document.createElement("option");
+
+            option.value = className;
+            option.textContent = "Class " + className;
+
+            classSelect.appendChild(option);
+        });
+    }
+
+
+    /* =========================
+       CLASS CHANGE
+    ========================= */
+
+    classSelect.addEventListener("change", function () {
+
+        const selectedClass = this.value;
+
+        sectionSelect.innerHTML =
+            `<option value="">Select Section</option>`;
+
+        studentCountInput.value = "";
+
+        if (!selectedClass) {
+            return;
+        }
+
+        const matchingClasses =
+            savedClasses.filter(function (classData) {
+
+                return String(classData.className) ===
+                    String(selectedClass);
+
+            });
+
+
+        matchingClasses.forEach(function (classData) {
+
+            const option = document.createElement("option");
+
+            option.value = classData.section;
+
+            option.textContent =
+                "Section " + classData.section;
+
+            sectionSelect.appendChild(option);
+        });
+
+    });
+
+
+    /* =========================
+       SECTION CHANGE
+    ========================= */
+
+    sectionSelect.addEventListener("change", function () {
+
+        const selectedClass = classSelect.value;
+        const selectedSection = this.value;
+
+        studentCountInput.value = "";
+
+        if (!selectedClass || !selectedSection) {
+            return;
+        }
+
+
+        const classData =
+            savedClasses.find(function (classData) {
+
+                return (
+                    String(classData.className) ===
+                        String(selectedClass)
+                    &&
+                    String(classData.section) ===
+                        String(selectedSection)
+                );
+
+            });
+
+
+        if (!classData) {
+
+            alert(
+                "Is Class + Section ke students Add Classes mein nahi mile."
+            );
+
+            return;
+        }
+
+
+        const students =
+            classData.students || [];
+
+
+        /* Automatically set student count */
+
+        studentCountInput.value = students.length;
+
+
+        if (students.length === 0) {
+
+            alert(
+                "Is Class + Section mein abhi koi student saved nahi hai."
+            );
+
+        }
+
+    });
+
+
+    /* =========================
+       ADD CUSTOM SUBJECT
+    ========================= */
+
+    addSubjectBtn.addEventListener("click", function () {
+
+        const subjectName =
+            prompt("Custom subject ka naam enter karo:");
+
+        if (!subjectName || subjectName.trim() === "") {
+            return;
+        }
+
+        const cleanName = subjectName.trim();
+
+
+        const existingSubjects =
+            Array.from(
+                document.querySelectorAll(
+                    'input[name="subjects"]'
+                )
+            ).map(function (input) {
+
+                return input.value.toLowerCase();
+
+            });
+
+
+        if (
+            existingSubjects.includes(
+                cleanName.toLowerCase()
+            )
+        ) {
+
+            alert("Ye subject already added hai.");
+
+            return;
+        }
+
+
+        const label =
+            document.createElement("label");
+
+        label.className = "subject-item";
+
+
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.name = "subjects";
+        checkbox.value = cleanName;
+        checkbox.checked = true;
+
+
+        label.appendChild(checkbox);
+
+        label.appendChild(
+            document.createTextNode(" " + cleanName)
+        );
+
+
+        subjectList.appendChild(label);
+
+    });
+
+
+    /* =========================
+       SAVE EXAM
+    ========================= */
+
+    examForm.addEventListener("submit", function (event) {
+
+        event.preventDefault();
+
+
+        const selectedSubjects =
+            Array.from(
+                document.querySelectorAll(
+                    'input[name="subjects"]:checked'
+                )
+            ).map(function (subject) {
+
+                return subject.value;
+
+            });
+
+
+        if (selectedSubjects.length === 0) {
+
+            alert(
+                "कम से कम एक subject select करो।"
+            );
+
+            return;
+        }
+
+
+        const selectedClass =
+            classSelect.value;
+
+        const selectedSection =
+            sectionSelect.value;
+
+
+        /* Find students */
+
+        const classData =
+            savedClasses.find(function (classData) {
+
+                return (
+                    String(classData.className) ===
+                        String(selectedClass)
+                    &&
+                    String(classData.section) ===
+                        String(selectedSection)
+                );
+
+            });
+
+
+        if (!classData) {
+
+            alert(
+                "Pehle Add Classes mein is Class + Section ke students add karo."
+            );
+
+            return;
+        }
+
+
+        const students =
+            classData.students || [];
+
+
+        if (students.length === 0) {
+
+            alert(
+                "Is Class + Section mein koi student saved nahi hai."
+            );
+
+            return;
+        }
+
+
+        /* =========================
+           EXAM DATA
+        ========================= */
+
+        const examData = {
+
+            id: Date.now(),
+
+            examName:
+                document.getElementById("examName").value.trim(),
+
+            examYear:
+                document.getElementById("examYear").value.trim(),
+
+            className:
+                selectedClass,
+
+            section:
+                selectedSection,
+
+            subjects:
+                selectedSubjects,
+
+            maxMarks:
+                document.getElementById("maxMarks").value,
+
+            /*
+               Existing field retained
+            */
+            studentCount:
+                document.getElementById("studentCount").value,
+
+            /*
+               Students from Add Classes
+            */
+            students:
+                students,
+
+            createdAt:
+                new Date().toLocaleString()
+        };
+
+
+        let exams =
+            JSON.parse(
+                localStorage.getItem("jnv_exams")
+            ) || [];
+
+
+        exams.push(examData);
+
+
+        localStorage.setItem(
+            "jnv_exams",
+            JSON.stringify(exams)
+        );
+
+
+        alert(
+            "Exam successfully save ho gaya."
+        );
+
+
+        window.location.href =
+            "main-dashboard.html";
+
+    });
+
+});
+         </script>
+    
+
+</body>
+</html>

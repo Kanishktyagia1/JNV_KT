@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Classes - JNV Result Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .topbar {
+            background: #2563eb;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar h2 {
+            font-size: 21px;
+        }
+
+        .back-btn {
+            background: white;
+            color: #2563eb;
+            border: none;
+            padding: 9px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+        }
+
+        .class-form {
+            display: flex;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #2563eb;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 17px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .class-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .class-header {
+            padding: 16px 18px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .class-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .student-count {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .class-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .open-btn {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .sheet {
+            display: none;
+            padding: 18px;
+            background: white;
+        }
+
+        .sheet-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+    position: relative;
+    z-index: 10;
+}
+
+.sheet-toolbar > div {
+    display: flex;
+    gap: 8px;
+    position: relative;
+    z-index: 20;
+}
+
+        .sheet-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 650px;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #eff6ff;
+            color: #1e3a8a;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+        }
+
+        td {
+            border: 1px solid #cbd5e1;
+            height: 45px;
+        }
+
+        td.sno {
+            width: 70px;
+            text-align: center;
+            background: #f8fafc;
+            font-weight: bold;
+        }
+
+        td.roll {
+            width: 130px;
+        }
+
+        td.name {
+            min-width: 300px;
+        }
+
+        td.action {
+            width: 70px;
+            text-align: center;
+        }
+
+        td input {
+            border: none;
+            border-radius: 0;
+            padding: 12px;
+            height: 44px;
+            background: transparent;
+        }
+
+        td input:focus {
+            background: #eff6ff;
+            box-shadow: inset 0 0 0 2px #2563eb;
+        }
+
+        .delete-row {
+            background: transparent;
+            color: #dc2626;
+            font-size: 17px;
+            padding: 7px 10px;
+        }
+
+        .empty {
+            color: #64748b;
+            padding: 15px 0;
+        }
+
+        @media (max-width: 650px) {
+
+            .class-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .class-header,
+            .sheet-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .class-actions {
+                width: 100%;
+            }
+
+            .class-actions button {
+                flex: 1;
+            }
+          .sheet-toolbar > div {
+    display: flex;
+    width: 100%;
+}
+
+.sheet-toolbar > div button {
+    flex: 1;
+}
+        }
+      .sheet-toolbar {
+    position: relative;
+    z-index: 10;
+}
+
+.sheet-toolbar button {
+    position: relative;
+    z-index: 20;
+    min-height: 44px;
+    touch-action: manipulation;
+}
+
+.class-actions button {
+    min-height: 44px;
+    touch-action: manipulation;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+
+        <h2>👨‍🎓 JNV Result Manager</h2>
+
+        <button
+            class="back-btn"
+            onclick="window.location.href='main-dashboard.html'">
+            ← Dashboard
+        </button>
+
+    </div>
+
+
+    <div class="container">
+
+        <!-- ADD CLASS -->
+
+        <div class="card">
+
+            <h2>➕ Add Class</h2>
+
+            <div class="class-form">
+
+                <div class="field">
+
+                    <label>
+                        Class
+                    </label>
+
+                    <select id="className">
+
+                        <option value="">
+                            Select Class
+                        </option>
+
+                        <option value="6">Class 6</option>
+                        <option value="7">Class 7</option>
+                        <option value="8">Class 8</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                        <option value="11">Class 11</option>
+                        <option value="12">Class 12</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label>
+                        Section
+                    </label>
+
+                    <input
+                        type="text"
+                        id="section"
+                        placeholder="Example: A">
+
+                </div>
+
+
+                <button
+                    class="primary-btn"
+                    id="addClass">
+
+                    ➕ Add Class
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- CLASS LIST -->
+
+        <div class="card">
+
+            <h2>📚 Classes</h2>
+
+            <div id="classList">
+
+                <p class="empty">
+                    No classes added yet.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="add-classes.js"></script>
+
+</body>
+</html>

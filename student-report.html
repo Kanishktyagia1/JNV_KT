@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Report | JNV Result Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .topbar {
+            background: #1e3a8a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,.5);
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 30px 20px;
+        }
+
+        .search-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(15,23,42,.08);
+            margin-bottom: 25px;
+        }
+
+        .search-box h1 {
+            margin-top: 0;
+            color: #1e3a8a;
+        }
+
+        .search-box p {
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .search-box label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #2563eb;
+        }
+
+        .search-box button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .search-box button:hover {
+            background: #1d4ed8;
+        }
+
+        .report-card {
+            background: white;
+            padding: 30px;
+            border: 2px solid #1e3a8a;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(15,23,42,.10);
+        }
+
+        .report-card h1 {
+            text-align: center;
+            color: #1e3a8a;
+            margin-top: 0;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 15px;
+        }
+
+        .report-card h2 {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .report-card p {
+            font-size: 16px;
+            margin: 12px 0;
+        }
+
+        .report-card hr {
+            border: none;
+            border-top: 1px solid #cbd5e1;
+            margin: 22px 0;
+        }
+
+        .print-btn {
+            margin-top: 20px;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 7px;
+            background: #16a34a;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .print-btn:hover {
+            background: #15803d;
+        }
+
+        @media(max-width:600px) {
+
+            .topbar {
+                padding: 15px;
+            }
+
+            .topbar h2 {
+                font-size: 17px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .search-box button {
+                width: 100%;
+            }
+
+            .report-card {
+                padding: 20px;
+            }
+        }
+
+        @media print {
+
+            .topbar,
+            .search-box,
+            .print-btn {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+            }
+
+            .report-card {
+                box-shadow: none;
+                border: 2px solid #000;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <h2>JNV Result Manager</h2>
+
+        <a href="main-dashboard.html" class="back-btn">
+            ← Back to Dashboard
+        </a>
+    </header>
+
+
+    <main class="container">
+
+        <div class="search-box">
+
+            <h1>🎓 Student Report</h1>
+
+            <p>
+                Enter student Roll Number to view the report card.
+            </p>
+
+            <label for="rollNumber">
+                Roll Number
+            </label>
+
+            <div class="search-row">
+
+                <input
+                    type="text"
+                    id="rollNumber"
+                    placeholder="Enter Roll Number"
+                >
+
+                <button id="searchStudent">
+                    Search
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div id="studentReport"></div>
+
+    </main>
+
+
+    <script src="student-report.js"></script>
+
+</body>
+
+</html>

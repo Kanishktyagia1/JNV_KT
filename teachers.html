@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Teachers | JNV Result Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .topbar {
+            background: #1e3a8a;
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,.6);
+            padding: 9px 14px;
+            border-radius: 7px;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(15,23,42,.08);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1e3a8a;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #2563eb;
+        }
+
+        .save-btn {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .save-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .teacher-item {
+            background: #f8fafc;
+            padding: 16px;
+            margin-top: 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .teacher-item h3 {
+            margin: 0 0 8px;
+            color: #1e3a8a;
+        }
+
+        .teacher-item p {
+            margin: 6px 0;
+            color: #475569;
+        }
+
+        .delete-btn {
+            margin-top: 10px;
+            padding: 9px 15px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background: #b91c1c;
+        }
+
+        .empty {
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                padding: 15px;
+            }
+
+            .topbar h2 {
+                font-size: 17px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+
+        <h2>JNV Result Manager</h2>
+
+        <a href="main-dashboard.html" class="back-btn">
+            ← Dashboard
+        </a>
+
+    </header>
+
+
+    <main class="container">
+
+        <!-- Add Teacher -->
+
+        <div class="card">
+
+            <h1>👨‍🏫 Add Teacher</h1>
+
+            <label for="teacherName">
+                Teacher Name
+            </label>
+
+            <input
+                type="text"
+                id="teacherName"
+                placeholder="Enter teacher name"
+            >
+
+
+            <label for="teacherId">
+                Teacher ID
+            </label>
+
+            <input
+                type="text"
+                id="teacherId"
+                placeholder="Enter Teacher ID"
+            >
+
+
+            <label for="teacherPassword">
+                Password
+            </label>
+
+            <input
+                type="password"
+                id="teacherPassword"
+                placeholder="Enter password"
+            >
+
+
+            <label for="teacherSubject">
+                Assigned Subject
+            </label>
+
+            <select id="teacherSubject">
+
+                <option value="">
+                    Select Subject
+                </option>
+
+                <option value="Physics">
+                    Physics
+                </option>
+
+                <option value="Chemistry">
+                    Chemistry
+                </option>
+
+                <option value="Mathematics">
+                    Mathematics
+                </option>
+
+                <option value="Biology">
+                    Biology
+                </option>
+
+                <option value="English">
+                    English
+                </option>
+
+                <option value="Hindi">
+                    Hindi
+                </option>
+
+                <option value="Computer Science">
+                    Computer Science
+                </option>
+
+                <option value="Social Science">
+                    Social Science
+                </option>
+
+                <option value="General">
+                    General
+                </option>
+
+            </select>
+
+
+            <button class="save-btn" id="saveTeacher">
+                💾 Save Teacher
+            </button>
+
+        </div>
+
+
+        <!-- Teacher List -->
+
+        <div class="card">
+
+            <h1>📋 Saved Teachers</h1>
+
+            <div id="teacherList"></div>
+
+        </div>
+
+    </main>
+
+
+    <script src="teachers.js"></script>
+
+</body>
+
+</html>

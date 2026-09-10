@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Teacher Dashboard | JNV Result Manager</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        /* =========================
+           TOP BAR
+        ========================= */
+
+        .topbar {
+            background: #0d162b;
+            color: white;
+            padding: 18px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 17px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+
+        /* =========================
+           MAIN CONTAINER
+        ========================= */
+
+        .container {
+            max-width: 1150px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+
+        /* =========================
+           WELCOME
+        ========================= */
+
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .welcome h1 {
+            margin: 0 0 7px;
+            font-size: 30px;
+        }
+
+        .welcome p {
+            margin: 0;
+            color: #64748b;
+        }
+
+
+        /* =========================
+           TEACHER PROFILE CARD
+        ========================= */
+
+        .profile-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+
+            margin-bottom: 30px;
+        }
+
+        .teacher-avatar {
+            width: 65px;
+            height: 65px;
+
+            border-radius: 50%;
+
+            background: #2563eb;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .teacher-info h2 {
+            margin: 0 0 8px;
+            font-size: 22px;
+        }
+
+        .teacher-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-badge {
+            background: #eef4ff;
+            color: #2563eb;
+
+            padding: 7px 12px;
+            border-radius: 20px;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        /* =========================
+           ASSIGNED EXAMS
+        ========================= */
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 20px;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .assignment-count {
+            background: #e0ecff;
+            color: #2563eb;
+
+            padding: 7px 12px;
+            border-radius: 20px;
+
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+
+        /* =========================
+           EXAM CARDS
+        ========================= */
+
+        #assignedExams {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(280px, 1fr));
+
+            gap: 18px;
+        }
+
+        .assigned-exam-card {
+            border: 1px solid #e2e8f0;
+
+            border-radius: 13px;
+
+            padding: 20px;
+
+            background: #fbfdff;
+
+            transition: 0.2s;
+        }
+
+        .assigned-exam-card:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 8px 20px rgba(37,99,235,0.10);
+
+            border-color: #bfdbfe;
+        }
+
+        .assigned-exam-card h3 {
+            margin: 0 0 15px;
+
+            font-size: 19px;
+
+            color: #172033;
+        }
+
+        .exam-detail {
+            color: #64748b;
+
+            font-size: 14px;
+
+            margin: 8px 0;
+        }
+
+        .exam-detail strong {
+            color: #334155;
+        }
+
+        .assigned-exam-card button {
+            width: 100%;
+
+            margin-top: 15px;
+
+            padding: 11px;
+
+            border: none;
+            border-radius: 8px;
+
+            background: #2563eb;
+            color: white;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .assigned-exam-card button:hover {
+            background: #1d4ed8;
+        }
+
+
+        /* =========================
+           EMPTY / LOADING MESSAGE
+        ========================= */
+
+        #assignedExams > p {
+            grid-column: 1 / -1;
+
+            text-align: center;
+
+            padding: 35px;
+
+            color: #64748b;
+
+            background: #f8fafc;
+
+            border-radius: 10px;
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                padding: 15px 18px;
+            }
+
+            .brand {
+                font-size: 18px;
+            }
+
+            .container {
+                margin: 25px auto;
+                padding: 0 14px;
+            }
+
+            .welcome h1 {
+                font-size: 25px;
+            }
+
+            .profile-card {
+                padding: 20px;
+                align-items: flex-start;
+            }
+
+            .teacher-avatar {
+                width: 55px;
+                height: 55px;
+                font-size: 23px;
+            }
+
+            .teacher-info h2 {
+                font-size: 19px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .card-header h2 {
+                font-size: 19px;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- TOP BAR -->
+
+    <div class="topbar">
+
+        <div class="brand">
+            🏫 JNV Result Manager
+        </div>
+
+        <button
+            class="logout-btn"
+            id="logout">
+            Logout
+        </button>
+
+    </div>
+
+
+
+    <!-- MAIN -->
+
+    <div class="container">
+
+
+        <!-- WELCOME -->
+
+        <div class="welcome">
+
+            <h1>
+    Welcome, <span id="welcomeTeacherName"></span> 👋
+            </h1>
+
+            <p>
+                Manage your assigned exams and enter student results.
+            </p>
+
+        </div>
+
+
+
+        <!-- TEACHER PROFILE -->
+
+        <div class="profile-card">
+
+            <div class="teacher-avatar">
+                👨‍🏫
+            </div>
+
+            <div class="teacher-info">
+
+                <h2 id="teacherName"></h2>
+
+                <div class="teacher-details">
+
+                    <span class="info-badge">
+                        🆔 Teacher ID:
+                        <span id="teacherId"></span>
+                    </span>
+
+                    <span class="info-badge">
+                        📚 Subject:
+                        <span id="teacherSubject"></span>
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ASSIGNED EXAMS -->
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h2>
+                    📋 My Assigned Exams
+                </h2>
+
+                <span class="assignment-count">
+                    Assigned Exams
+                </span>
+
+            </div>
+
+
+            <div id="assignedExams">
+
+                <p>
+                    Loading assignments...
+                </p>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <script src="teacher-dashboard.js"></script>
+
+</body>
+
+</html>

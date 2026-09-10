@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Teacher Result Entry | JNV Result Manager</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+
+        /* =========================
+           TOPBAR
+        ========================= */
+
+        .topbar {
+            background: #0d162b;
+            color: white;
+
+            padding: 17px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            box-shadow: 0 3px 15px rgba(0,0,0,0.12);
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .back-btn {
+            color: white;
+            text-decoration: none;
+
+            background: #2563eb;
+
+            padding: 10px 16px;
+
+            border-radius: 8px;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #1d4ed8;
+        }
+
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        .container {
+            max-width: 1150px;
+
+            margin: 32px auto;
+
+            padding: 0 20px;
+        }
+
+
+        /* =========================
+           HEADER CARD
+        ========================= */
+
+        .card {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 25px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 5px 20px rgba(0,0,0,0.06);
+        }
+
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 15px;
+
+            margin-bottom: 22px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+
+            font-size: 28px;
+        }
+
+        .page-title p {
+            margin: 5px 0 0;
+
+            color: #64748b;
+
+            font-size: 14px;
+        }
+
+        .result-badge {
+            background: #e8f0ff;
+
+            color: #2563eb;
+
+            padding: 8px 13px;
+
+            border-radius: 20px;
+
+            font-size: 13px;
+            font-weight: bold;
+
+            white-space: nowrap;
+        }
+
+
+        /* =========================
+           EXAM INFO
+        ========================= */
+
+        .exam-info {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(190px, 1fr));
+
+            gap: 15px;
+        }
+
+        .info-box {
+            background: #f8fafc;
+
+            border: 1px solid #e5eaf1;
+
+            border-radius: 12px;
+
+            padding: 17px;
+
+            transition: 0.2s;
+        }
+
+        .info-box:hover {
+            border-color: #bfdbfe;
+
+            background: #fbfdff;
+        }
+
+        .info-box strong {
+            display: block;
+
+            margin-bottom: 7px;
+
+            font-size: 12px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+            color: #64748b;
+        }
+
+        .info-box span {
+            font-size: 16px;
+
+            font-weight: 600;
+
+            color: #172033;
+        }
+
+
+        /* =========================
+           MARKS CARD
+        ========================= */
+
+        .marks-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+        }
+
+        .marks-header h2 {
+            margin: 0;
+
+            font-size: 21px;
+        }
+
+        .marks-tip {
+            color: #64748b;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           MESSAGE
+        ========================= */
+
+        .message {
+            padding: 16px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e5eaf1;
+
+            border-radius: 10px;
+
+            color: #64748b;
+
+            margin-bottom: 18px;
+        }
+
+
+        /* =========================
+           TABLE
+        ========================= */
+
+        .table-container {
+            overflow-x: auto;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 650px;
+        }
+
+        th {
+            background: #eef4ff;
+
+            color: #334155;
+
+            font-size: 13px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.3px;
+
+            padding: 14px;
+
+            border-bottom: 1px solid #dbe3ef;
+        }
+
+        td {
+            padding: 13px 14px;
+
+            border-bottom: 1px solid #edf1f5;
+
+            text-align: center;
+
+            font-size: 14px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        td:nth-child(1) {
+            font-weight: 600;
+
+            color: #475569;
+        }
+
+        td:nth-child(2) {
+            text-align: left;
+
+            font-weight: 600;
+
+            color: #172033;
+        }
+
+
+        /* =========================
+           MARKS INPUT
+        ========================= */
+
+        input.marks-input {
+            width: 95px;
+
+            padding: 10px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            text-align: center;
+
+            font-size: 15px;
+
+            font-weight: 600;
+
+            outline: none;
+
+            background: white;
+
+            transition: 0.2s;
+        }
+
+        input.marks-input:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px rgba(37,99,235,0.12);
+        }
+
+        input.marks-input:hover {
+            border-color: #94a3b8;
+        }
+
+
+        /* =========================
+           SAVE BUTTON
+        ========================= */
+
+        .save-area {
+            display: flex;
+
+            justify-content: flex-end;
+
+            margin-top: 20px;
+        }
+
+        .save-btn {
+            padding: 13px 23px;
+
+            border: none;
+
+            border-radius: 9px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-size: 15px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            box-shadow:
+                0 4px 10px rgba(37,99,235,0.18);
+
+            transition: 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #1d4ed8;
+
+            transform: translateY(-1px);
+        }
+
+        .save-btn:active {
+            transform: translateY(0);
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                padding: 15px 17px;
+            }
+
+            .brand {
+                font-size: 17px;
+            }
+
+            .back-btn {
+                padding: 8px 10px;
+
+                font-size: 12px;
+            }
+
+            .container {
+                margin: 22px auto;
+
+                padding: 0 13px;
+            }
+
+            .card {
+                padding: 18px;
+
+                border-radius: 13px;
+            }
+
+            .page-title {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+            .page-title h1 {
+                font-size: 24px;
+            }
+
+            .result-badge {
+                font-size: 12px;
+            }
+
+            .marks-header {
+                align-items: flex-start;
+
+                flex-direction: column;
+
+                gap: 5px;
+            }
+
+            .marks-header h2 {
+                font-size: 19px;
+            }
+
+            input.marks-input {
+                width: 85px;
+            }
+
+            .save-area {
+                justify-content: stretch;
+            }
+
+            .save-btn {
+                width: 100%;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         TOPBAR
+    ========================= -->
+
+    <div class="topbar">
+
+        <div class="brand">
+            🏫 JNV Result Manager
+        </div>
+
+        <a
+            href="teacher-dashboard.html"
+            class="back-btn"
+        >
+            ← Teacher Dashboard
+        </a>
+
+    </div>
+
+
+
+    <!-- =========================
+         MAIN
+    ========================= -->
+
+    <div class="container">
+
+
+        <!-- =========================
+             EXAM INFORMATION
+        ========================= -->
+
+        <div class="card">
+
+            <div class="page-title">
+
+                <div>
+
+                    <h1>
+                        Teacher Result Entry
+                    </h1>
+
+                    <p>
+                        Enter and save marks for your assigned subject.
+                    </p>
+
+                </div>
+
+                <div class="result-badge">
+                    📝 Result Entry
+                </div>
+
+            </div>
+
+
+            <div class="exam-info">
+
+
+                <div class="info-box">
+
+                    <strong>
+                        Exam
+                    </strong>
+
+                    <span id="examName">
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <strong>
+                        Class
+                    </strong>
+
+                    <span id="examClass">
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <strong>
+                        Session
+                    </strong>
+
+                    <span id="examSession">
+                        Loading...
+                    </span>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <strong>
+                        Subject
+                    </strong>
+
+                    <span id="subjectName">
+                        Loading...
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =========================
+             MARKS ENTRY
+        ========================= -->
+
+        <div class="card">
+
+
+            <div class="marks-header">
+
+                <h2>
+                    📊 Enter Student Marks
+                </h2>
+
+                <span class="marks-tip">
+                    Enter marks carefully before saving.
+                </span>
+
+            </div>
+
+
+            <div
+                id="resultMessage"
+                class="message"
+            >
+                Loading students...
+            </div>
+
+
+
+            <div class="table-container">
+
+                <table
+                    id="resultTable"
+                    style="display: none;"
+                >
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Roll Number
+                            </th>
+
+                            <th>
+                                Student Name
+                            </th>
+
+                            <th>
+                                Marks
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="studentRows">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+
+            <div class="save-area">
+
+                <button
+                    id="saveMarks"
+                    class="save-btn"
+                    style="display: none;"
+                >
+                    💾 Save Marks
+                </button>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <script src="teacher-result.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | JNV Result Manager</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f4f7fb;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 430px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .login-logo h1 {
+            color: #2563eb;
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .login-logo p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #dbe2ea;
+            border-radius: 9px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .login-submit {
+            width: 100%;
+            border: none;
+            padding: 14px;
+            border-radius: 9px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .login-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .login-links {
+            text-align: center;
+            margin-top: 22px;
+        }
+
+        .login-links a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .login-links p {
+            margin-top: 14px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .back-home {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <div class="login-card">
+
+            <div class="login-logo">
+                <h1>JNV Result Manager</h1>
+                <p>Teacher Login Portal</p>
+            </div>
+
+            <form id="loginForm">
+
+                <div class="form-group">
+                    <label for="teacherId">Teacher ID / Email</label>
+                    <input
+                        type="text"
+                        id="teacherId"
+                        placeholder="Enter Teacher ID or Email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position: relative;">
+    <input
+        type="password"
+        id="password"
+        placeholder="Enter your password"
+        required
+        style="padding-right: 45px;"
+    >
+
+    <button
+        type="button"
+        id="togglePassword"
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+        border:none; background:none; cursor:pointer; font-size:18px;"
+    >👁️</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-submit">
+                    Login
+                </button>
+
+            </form>
+
+            <div class="login-links">
+                <a href="#" id="forgotPassword">
+                    Forgot Password?
+                </a>
+
+                <p>
+                    New Main Teacher?
+                    <a href="signup.html">Create Account</a>
+                </p>
+            </div>
+
+        </div>
+
+        <a href="index.html" class="back-home">
+            ← Back to Home
+        </a>
+
+    </div>
+
+        <script>const loginForm = document.getElementById("loginForm");
+const forgotPassword = document.getElementById("forgotPassword");
+
+
+loginForm.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+
+    const teacherId =
+        document.getElementById("teacherId").value.trim();
+
+    const password =
+        document.getElementById("password").value;
+
+
+    // =========================
+    // 1. ADMIN LOGIN
+    // =========================
+
+    const account =
+        JSON.parse(localStorage.getItem("jnv_account"));
+
+
+    if (
+        account &&
+        teacherId === account.email &&
+        password === account.password
+    ) {
+
+        localStorage.setItem("jnv_logged_in", "true");
+
+        localStorage.setItem("jnv_user_role", "admin");
+
+        window.location.href = "main-dashboard.html";
+
+        return;
+    }
+
+
+    // =========================
+    // 2. TEACHER LOGIN
+    // =========================
+
+    const teachers =
+        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
+
+
+    const teacher = teachers.find(function(t) {
+
+        return (
+            String(t.id).trim() === teacherId &&
+            t.password === password
+        );
+
+    });
+
+
+    if (teacher) {
+
+        localStorage.setItem("jnv_logged_in", "true");
+
+        localStorage.setItem("jnv_user_role", "teacher");
+
+        localStorage.setItem(
+            "jnv_logged_teacher",
+            JSON.stringify(teacher)
+        );
+
+
+        // Teacher ko uske assigned subject ke saath login karwao
+
+        window.location.href = "teacher-dashboard.html";
+
+        return;
+    }
+
+
+    // =========================
+    // WRONG LOGIN
+    // =========================
+
+    alert("Wrong Teacher ID/Email ya Password.");
+
+});
+
+
+forgotPassword.addEventListener("click", function(event) {
+
+    event.preventDefault();
+
+    alert("Password recovery system baad mein banega.");
+
+});
+          const togglePassword =
+    document.getElementById("togglePassword");
+
+const passwordInput =
+    document.getElementById("password");
+
+togglePassword.addEventListener("click", function () {
+
+    if (passwordInput.type === "password") {
+
+        passwordInput.type = "text";
+        togglePassword.textContent = "🙈";
+
+    } else {
+
+        passwordInput.type = "password";
+        togglePassword.textContent = "👁️";
+
+    }
+
+});
+        </script>
+
+</body>
+</html>

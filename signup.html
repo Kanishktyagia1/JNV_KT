@@ -7,6 +7,8 @@
     <title>Create Account | JNV Result Manager</title>
 
     <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 
     <style>
         body {
@@ -324,69 +326,155 @@
 
     </div>
 
-    <script>
-    const signupForm = document.getElementById("signupForm");
+        <script>
+const signupForm = document.getElementById("signupForm");
 
-    signupForm.addEventListener("submit", function(event) {
-        event.preventDefault();
+signupForm.addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-        const password =
-            document.getElementById("password").value;
+    const password =
+        document.getElementById("password").value;
 
-        const confirmPassword =
-            document.getElementById("confirmPassword").value;
+    const confirmPassword =
+        document.getElementById("confirmPassword").value;
 
-        if (password !== confirmPassword) {
-            alert("Passwords match nahi kar rahe.");
+    if (password !== confirmPassword) {
+        alert("Passwords match nahi kar rahe.");
+        return;
+    }
+
+    const schoolName =
+        document.getElementById("schoolName").value.trim();
+
+    const teacherName =
+        document.getElementById("teacherName").value.trim();
+
+    const schoolAddress =
+        document.getElementById("schoolAddress").value.trim();
+
+    const state =
+        document.getElementById("state").value.trim();
+
+    const district =
+        document.getElementById("district").value.trim();
+
+    const email =
+        document.getElementById("email").value.trim();
+
+    const mobile =
+        document.getElementById("mobile").value.trim();
+
+    // Data to save in Supabase
+    const schoolData = {
+        school_name: schoolName,
+        school_address: schoolAddress,
+        state: state,
+        district: district,
+        admin_name: teacherName,
+        email: email,
+        mobile: mobile
+    };
+
+    try {
+
+        const { data, error } = await db
+            .from("schools")
+            .insert([schoolData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Supabase signup error:", error);
+            alert("Account create nahi ho paya.\n\n" + error.message);
             return;
         }
 
+        // Temporary compatibility with your existing login system
+        // Password is NOT stored in Supabase.
         const accountData = {
-    schoolName: document.getElementById("schoolName").value.trim(),
-    teacherName: document.getElementById("teacherName").value.trim(),
-    schoolAddress: document.getElementById("schoolAddress").value.trim(),
-    state: document.getElementById("state").value.trim(),
-    district: document.getElementById("district").value.trim(),
-    email: document.getElementById("email").value.trim(),
-    mobile: document.getElementById("mobile").value.trim(),
-    password: password
-};
+            schoolName: schoolName,
+            teacherName: teacherName,
+            schoolAddress: schoolAddress,
+            state: state,
+            district: district,
+            email: email,
+            mobile: mobile,
+            password: password,
+            schoolId: data.id
+        };
 
         localStorage.setItem(
             "jnv_account",
             JSON.stringify(accountData)
         );
 
+        // Save Supabase school ID separately for future modules
+        localStorage.setItem(
+            "jnv_school_id",
+            data.id
+        );
+
         alert("Account successfully create ho gaya. ✅");
 
         window.location.href = "login.html";
-    });
-      const togglePassword = document.getElementById("togglePassword");
-const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
 
-const passwordInput = document.getElementById("password");
-const confirmPasswordInput = document.getElementById("confirmPassword");
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Supabase se connection mein problem hui.\n\n" +
+            error.message
+        );
+    }
+});
+
+
+// Password show/hide
+const togglePassword =
+    document.getElementById("togglePassword");
+
+const toggleConfirmPassword =
+    document.getElementById("toggleConfirmPassword");
+
+const passwordInput =
+    document.getElementById("password");
+
+const confirmPasswordInput =
+    document.getElementById("confirmPassword");
+
 
 togglePassword.addEventListener("click", function() {
+
     if (passwordInput.type === "password") {
+
         passwordInput.type = "text";
         togglePassword.textContent = "🙈";
+
     } else {
+
         passwordInput.type = "password";
         togglePassword.textContent = "👁️";
+
     }
 });
 
+
 toggleConfirmPassword.addEventListener("click", function() {
+
     if (confirmPasswordInput.type === "password") {
+
         confirmPasswordInput.type = "text";
         toggleConfirmPassword.textContent = "🙈";
+
     } else {
+
         confirmPasswordInput.type = "password";
         toggleConfirmPassword.textContent = "👁️";
+
     }
 });
-    </script>
+        </script>
 
 </body>
 </html>

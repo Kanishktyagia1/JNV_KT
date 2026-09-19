@@ -1,5 +1,12 @@
 // ===============================
-// ADD CLASSES
+// SUPABASE
+// ===============================
+
+const db = window.db || window.supabaseClient;
+
+
+// ===============================
+// ELEMENTS
 // ===============================
 
 const addClass =
@@ -10,12 +17,31 @@ const classList =
 
 
 // ===============================
+// SCHOOL ID
+// ===============================
+
+const schoolId =
+    localStorage.getItem("jnv_school_id");
+
+
+// ===============================
+// CHECK SUPABASE
+// ===============================
+
+if (!db) {
+
+    alert("Supabase connection nahi mila.");
+
+}
+
+
+// ===============================
 // ADD CLASS
 // ===============================
 
 addClass.addEventListener(
     "click",
-    function () {
+    async function () {
 
         const className =
             document.getElementById(
@@ -43,31 +69,48 @@ addClass.addEventListener(
         }
 
 
-        let classes =
-            JSON.parse(
-                localStorage.getItem(
-                    "jnv_classes"
-                )
-            ) || [];
+        if (!schoolId) {
+
+            alert(
+                "School ID nahi mili. Please signup/login again."
+            );
+
+            return;
+        }
 
 
-        const alreadyExists =
-            classes.some(function (item) {
+        // ===============================
+        // CHECK DUPLICATE
+        // ===============================
 
-                return (
-                    String(item.className) ===
-                    String(className)
-                    &&
-                    String(item.section)
-                        .toLowerCase() ===
-                    String(section)
-                        .toLowerCase()
-                );
-
-            });
+        const {
+            data: existingClasses,
+            error: checkError
+        } = await db
+            .from("classes")
+            .select("id")
+            .eq("school_id", schoolId)
+            .eq("class_name", className)
+            .eq("section", section);
 
 
-        if (alreadyExists) {
+        if (checkError) {
+
+            console.error(checkError);
+
+            alert(
+                "Class check nahi ho paya: " +
+                checkError.message
+            );
+
+            return;
+        }
+
+
+        if (
+            existingClasses &&
+            existingClasses.length > 0
+        ) {
 
             alert(
                 "This Class + Section already exists."
@@ -77,26 +120,37 @@ addClass.addEventListener(
         }
 
 
-        classes.push({
+        // ===============================
+        // INSERT CLASS
+        // ===============================
 
-            id: Date.now(),
+        const {
+            data,
+            error
+        } = await db
+            .from("classes")
+            .insert([
+                {
+                    school_id: schoolId,
+                    class_name: className,
+                    section: section
+                }
+            ])
+            .select()
+            .single();
 
-            className:
-                className,
 
-            section:
-                section,
+        if (error) {
 
-            students:
-                []
+            console.error(error);
 
-        });
+            alert(
+                "Class save nahi ho payi: " +
+                error.message
+            );
 
-
-        localStorage.setItem(
-            "jnv_classes",
-            JSON.stringify(classes)
-        );
+            return;
+        }
 
 
         document.getElementById(
@@ -106,6 +160,11 @@ addClass.addEventListener(
         document.getElementById(
             "section"
         ).value = "";
+
+
+        alert(
+            "Class successfully added! ✅"
+        );
 
 
         showClasses();
@@ -118,17 +177,50 @@ addClass.addEventListener(
 // SHOW CLASSES
 // ===============================
 
-function showClasses() {
+async function showClasses() {
 
-    const classes =
-        JSON.parse(
-            localStorage.getItem(
-                "jnv_classes"
-            )
-        ) || [];
+    if (!schoolId) {
+
+        classList.innerHTML = `
+            <p class="empty">
+                School ID nahi mili.
+            </p>
+        `;
+
+        return;
+    }
 
 
-    if (classes.length === 0) {
+    const {
+        data: classes,
+        error
+    } = await db
+        .from("classes")
+        .select("*")
+        .eq("school_id", schoolId)
+        .order("class_name", {
+            ascending: true
+        });
+
+
+    if (error) {
+
+        console.error(error);
+
+        classList.innerHTML = `
+            <p class="empty">
+                Classes load nahi ho payi.
+            </p>
+        `;
+
+        return;
+    }
+
+
+    if (
+        !classes ||
+        classes.length === 0
+    ) {
 
         classList.innerHTML = `
             <p class="empty">
@@ -143,150 +235,162 @@ function showClasses() {
     classList.innerHTML = "";
 
 
-    classes.forEach(
-        function (classData, classIndex) {
+    for (
+        let classIndex = 0;
+        classIndex < classes.length;
+        classIndex++
+    ) {
 
-            const students =
-                Array.isArray(
-                    classData.students
-                )
-                    ? classData.students
-                    : [];
+        const classData =
+            classes[classIndex];
 
 
-            classList.innerHTML += `
+        const {
+            data: students
+        } = await db
+            .from("students")
+            .select("*")
+            .eq("class_id", classData.id)
+            .order("roll_number", {
+                ascending: true
+            });
 
-                <div class="class-card">
 
-                    <div class="class-header">
+        const studentList =
+            students || [];
 
-                        <div>
 
-                            <div class="class-title">
+        classList.innerHTML += `
 
-                                Class ${classData.className}
-                                -
-                                Section ${classData.section}
+            <div class="class-card">
 
-                            </div>
+                <div class="class-header">
 
-                            <div class="student-count">
+                    <div>
 
-                                ${students.length}
-                                Student(s)
+                        <div class="class-title">
 
-                            </div>
+                            Class ${classData.class_name}
+                            -
+                            Section ${classData.section}
 
                         </div>
 
+                        <div class="student-count">
 
-                        <div class="class-actions">
-
-                            <button
-                                class="open-btn"
-                                onclick="toggleSheet(${classIndex})">
-
-                                📊 Open Sheet
-
-                            </button>
-
-
-                            <button
-                                class="delete-btn"
-                                onclick="deleteClass(${classIndex})">
-
-                                🗑️ Delete
-
-                            </button>
+                            ${studentList.length}
+                            Student(s)
 
                         </div>
 
                     </div>
 
 
-                    <div
-                        class="sheet"
-                        id="sheet-${classIndex}">
+                    <div class="class-actions">
 
-                        <div class="sheet-toolbar">
+                        <button
+                            class="open-btn"
+                            onclick="toggleSheet('${classData.id}')">
 
-                            <strong>
-                                Student List
-                            </strong>
+                            📊 Open Sheet
 
-                            <div>
-
-                                <button
-                                    class="primary-btn"
-                                    onclick="addRow(${classIndex})">
-
-                                    ➕ Add Row
-
-                                </button>
-
-                                <button
-                                    class="primary-btn"
-                                    onclick="saveStudents(${classIndex})">
-
-                                    💾 Save Students
-
-                                </button>
-
-                            </div>
-
-                        </div>
+                        </button>
 
 
-                        <div class="sheet-wrapper">
+                        <button
+                            class="delete-btn"
+                            onclick="deleteClass('${classData.id}')">
 
-                            <table>
+                            🗑️ Delete
 
-                                <thead>
-
-                                    <tr>
-
-                                        <th>
-                                            S. No.
-                                        </th>
-
-                                        <th>
-                                            Roll No.
-                                        </th>
-
-                                        <th>
-                                            Student Name
-                                        </th>
-
-                                        <th>
-                                            Action
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody
-                                    id="student-table-${classIndex}">
-
-                                    ${createRows(
-                                        students,
-                                        classIndex
-                                    )}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
+                        </button>
 
                     </div>
 
                 </div>
 
-            `;
 
-        }
-    );
+                <div
+                    class="sheet"
+                    id="sheet-${classData.id}">
+
+                    <div class="sheet-toolbar">
+
+                        <strong>
+                            Student List
+                        </strong>
+
+                        <div>
+
+                            <button
+                                class="primary-btn"
+                                onclick="addRow('${classData.id}')">
+
+                                ➕ Add Row
+
+                            </button>
+
+                            <button
+                                class="primary-btn"
+                                onclick="saveStudents('${classData.id}')">
+
+                                💾 Save Students
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="sheet-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        S. No.
+                                    </th>
+
+                                    <th>
+                                        Roll No.
+                                    </th>
+
+                                    <th>
+                                        Student Name
+                                    </th>
+
+                                    <th>
+                                        Action
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody
+                                id="student-table-${classData.id}">
+
+                                ${createRows(
+                                    studentList,
+                                    classData.id
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+    }
 
 }
 
@@ -297,16 +401,19 @@ function showClasses() {
 
 function createRows(
     students,
-    classIndex
+    classId
 ) {
 
     let rows = "";
 
 
-    if (students.length === 0) {
+    if (
+        !students ||
+        students.length === 0
+    ) {
 
         return createEmptyRow(
-            classIndex,
+            classId,
             1
         );
     }
@@ -328,7 +435,7 @@ function createRows(
                         <input
                             type="number"
                             class="roll-input"
-                            value="${student.rollNumber || ""}"
+                            value="${student.roll_number || ""}"
                             placeholder="Roll No.">
 
                     </td>
@@ -338,7 +445,7 @@ function createRows(
                         <input
                             type="text"
                             class="name-input"
-                            value="${student.studentName || ""}"
+                            value="${student.student_name || ""}"
                             placeholder="Student Name">
 
                     </td>
@@ -372,7 +479,7 @@ function createRows(
 // ===============================
 
 function createEmptyRow(
-    classIndex,
+    classId,
     number
 ) {
 
@@ -424,12 +531,17 @@ function createEmptyRow(
 // OPEN / CLOSE SHEET
 // ===============================
 
-function toggleSheet(index) {
+function toggleSheet(classId) {
 
     const sheet =
         document.getElementById(
-            `sheet-${index}`
+            `sheet-${classId}`
         );
+
+
+    if (!sheet) {
+        return;
+    }
 
 
     if (
@@ -453,12 +565,17 @@ function toggleSheet(index) {
 // ADD NEW ROW
 // ===============================
 
-function addRow(classIndex) {
+function addRow(classId) {
 
     const tableBody =
         document.getElementById(
-            `student-table-${classIndex}`
+            `student-table-${classId}`
         );
+
+
+    if (!tableBody) {
+        return;
+    }
 
 
     const rowCount =
@@ -470,7 +587,7 @@ function addRow(classIndex) {
     tableBody.insertAdjacentHTML(
         "beforeend",
         createEmptyRow(
-            classIndex,
+            classId,
             rowCount + 1
         )
     );
@@ -479,13 +596,18 @@ function addRow(classIndex) {
 
 
 // ===============================
-// DELETE ROW
+// DELETE ROW FROM SCREEN
 // ===============================
 
 function deleteRow(button) {
 
     const row =
         button.closest("tr");
+
+
+    if (!row) {
+        return;
+    }
 
 
     row.remove();
@@ -522,6 +644,7 @@ function updateSerialNumbers() {
                             ".sno"
                         );
 
+
                     if (sno) {
 
                         sno.textContent =
@@ -541,24 +664,17 @@ function updateSerialNumbers() {
 // SAVE STUDENTS
 // ===============================
 
-function saveStudents(classIndex) {
-
-    let classes =
-        JSON.parse(
-            localStorage.getItem(
-                "jnv_classes"
-            )
-        ) || [];
-
-
-    const classData =
-        classes[classIndex];
-
+async function saveStudents(classId) {
 
     const tableBody =
         document.getElementById(
-            `student-table-${classIndex}`
+            `student-table-${classId}`
         );
+
+
+    if (!tableBody) {
+        return;
+    }
 
 
     const rows =
@@ -595,8 +711,7 @@ function saveStudents(classIndex) {
             nameInput.value.trim();
 
 
-        // Completely empty row
-        // is ignored
+        // Empty row ignored
 
         if (
             rollNumber === "" &&
@@ -622,14 +737,10 @@ function saveStudents(classIndex) {
 
         students.push({
 
-            id:
-                Date.now() +
-                Math.random(),
-
-            rollNumber:
+            roll_number:
                 rollNumber,
 
-            studentName:
+            student_name:
                 studentName
 
         });
@@ -638,7 +749,7 @@ function saveStudents(classIndex) {
 
 
     // ===============================
-    // CHECK DUPLICATE ROLL NUMBERS
+    // DUPLICATE ROLL NUMBERS
     // ===============================
 
     const rollNumbers =
@@ -646,7 +757,7 @@ function saveStudents(classIndex) {
             function (student) {
 
                 return String(
-                    student.rollNumber
+                    student.roll_number
                 );
 
             }
@@ -671,33 +782,93 @@ function saveStudents(classIndex) {
 
 
     // ===============================
-    // SORT BY ROLL NUMBER
+    // SORT
     // ===============================
 
     students.sort(
         function (a, b) {
 
             return (
-                Number(a.rollNumber) -
-                Number(b.rollNumber)
+                Number(a.roll_number) -
+                Number(b.roll_number)
             );
 
         }
     );
 
 
-    classData.students =
-        students;
+    // ===============================
+    // DELETE OLD STUDENTS
+    // ===============================
+
+    const {
+        error: deleteError
+    } = await db
+        .from("students")
+        .delete()
+        .eq("class_id", classId);
 
 
-    classes[classIndex] =
-        classData;
+    if (deleteError) {
+
+        console.error(deleteError);
+
+        alert(
+            "Old student data delete nahi ho paya: " +
+            deleteError.message
+        );
+
+        return;
+    }
 
 
-    localStorage.setItem(
-        "jnv_classes",
-        JSON.stringify(classes)
-    );
+    // ===============================
+    // INSERT NEW STUDENTS
+    // ===============================
+
+    if (students.length > 0) {
+
+        const studentsToInsert =
+            students.map(
+                function (student) {
+
+                    return {
+
+                        class_id:
+                            classId,
+
+                        roll_number:
+                            student.roll_number,
+
+                        student_name:
+                            student.student_name
+
+                    };
+
+                }
+            );
+
+
+        const {
+            error: insertError
+        } = await db
+            .from("students")
+            .insert(studentsToInsert);
+
+
+        if (insertError) {
+
+            console.error(insertError);
+
+            alert(
+                "Students save nahi ho paye: " +
+                insertError.message
+            );
+
+            return;
+        }
+
+    }
 
 
     alert(
@@ -705,7 +876,7 @@ function saveStudents(classIndex) {
     );
 
 
-    showClasses();
+    await showClasses();
 
 
     // Re-open sheet
@@ -713,7 +884,7 @@ function saveStudents(classIndex) {
     setTimeout(
         function () {
 
-            toggleSheet(classIndex);
+            toggleSheet(classId);
 
         },
         50
@@ -726,7 +897,7 @@ function saveStudents(classIndex) {
 // DELETE CLASS
 // ===============================
 
-function deleteClass(index) {
+async function deleteClass(classId) {
 
     const confirmDelete =
         confirm(
@@ -739,23 +910,58 @@ function deleteClass(index) {
     }
 
 
-    let classes =
-        JSON.parse(
-            localStorage.getItem(
-                "jnv_classes"
-            )
-        ) || [];
+    // ===============================
+    // DELETE STUDENTS FIRST
+    // ===============================
+
+    const {
+        error: studentDeleteError
+    } = await db
+        .from("students")
+        .delete()
+        .eq("class_id", classId);
 
 
-    classes.splice(
-        index,
-        1
-    );
+    if (studentDeleteError) {
+
+        console.error(studentDeleteError);
+
+        alert(
+            "Students delete nahi ho paye: " +
+            studentDeleteError.message
+        );
+
+        return;
+    }
 
 
-    localStorage.setItem(
-        "jnv_classes",
-        JSON.stringify(classes)
+    // ===============================
+    // DELETE CLASS
+    // ===============================
+
+    const {
+        error: classDeleteError
+    } = await db
+        .from("classes")
+        .delete()
+        .eq("id", classId);
+
+
+    if (classDeleteError) {
+
+        console.error(classDeleteError);
+
+        alert(
+            "Class delete nahi ho payi: " +
+            classDeleteError.message
+        );
+
+        return;
+    }
+
+
+    alert(
+        "Class successfully deleted! ✅"
     );
 
 

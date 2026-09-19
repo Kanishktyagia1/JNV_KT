@@ -123,7 +123,7 @@ async function loadExam() {
         if (classError) throw classError;
         const { data: subjectData, error: subjectError } = await db.from("exam_subjects").select("subject_name, max_marks").eq("exam_id", examId).order("created_at", {ascending:true});
         if (subjectError) throw subjectError;
-        const { data: examStudents, error: studentError } = await db.from("exam_students").select("student_id, roll_number_snapshot, student_name_snapshot").eq("exam_id", examId).order("roll_number_snapshot", {ascending:true});
+        const { data: examStudents, error: studentError } = await db.from("exam_students").select("id, student_id, roll_number_snapshot, student_name_snapshot").eq("exam_id", examId).order("roll_number_snapshot", {ascending:true});
         if (studentError) throw studentError;
         exam = {
             id: examData.id, examName: examData.exam_name || "", examYear: examData.exam_year || "",

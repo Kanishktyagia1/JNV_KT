@@ -2,7 +2,6 @@
 // SUPABASE
 // ===============================
 
-const db = window.db || window.supabaseClient;
 
 
 // ===============================

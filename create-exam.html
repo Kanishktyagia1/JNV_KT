@@ -332,8 +332,11 @@
     </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
-         <script>
-document.addEventListener("DOMContentLoaded", function () {
+         
+                
+
+      <script>
+document.addEventListener("DOMContentLoaded", async function () {
 
     const examForm = document.getElementById("examForm");
 
@@ -344,367 +347,635 @@ document.addEventListener("DOMContentLoaded", function () {
     const addSubjectBtn = document.getElementById("addSubjectBtn");
     const subjectList = document.getElementById("subjectList");
 
+    const schoolId = localStorage.getItem("jnv_school_id");
 
-    /* =========================
-       LOAD CLASSES FROM ADD CLASSES
-    ========================= */
-
-    const savedClasses =
-        JSON.parse(localStorage.getItem("jnv_classes")) || [];
+    let savedClasses = [];
+    let selectedStudents = [];
 
 
-    /*
-       Class dropdown ko Add Classes
-       ke saved data ke according set karna
-    */
+    // =========================
+    // CHECK SCHOOL
+    // =========================
 
-    if (savedClasses.length > 0) {
+    if (!schoolId) {
+        alert("School ID nahi mila. Please signup/login again.");
+        return;
+    }
+
+
+    // =========================
+    // LOAD CLASSES FROM SUPABASE
+    // =========================
+
+    async function loadClasses() {
+
+        const { data, error } = await db
+            .from("classes")
+            .select("*")
+            .eq("school_id", schoolId)
+            .order("class_name", { ascending: true })
+            .order("section", { ascending: true });
+
+
+        if (error) {
+
+            console.error(error);
+
+            alert(
+                "Classes load nahi ho pa rahi hain."
+            );
+
+            return;
+        }
+
+
+        savedClasses = data || [];
+
 
         classSelect.innerHTML =
             `<option value="">Select Class</option>`;
 
+
         const uniqueClasses = [];
+
 
         savedClasses.forEach(function (classData) {
 
-            if (!uniqueClasses.includes(classData.className)) {
-                uniqueClasses.push(classData.className);
+            if (
+                !uniqueClasses.includes(
+                    String(classData.class_name)
+                )
+            ) {
+
+                uniqueClasses.push(
+                    String(classData.class_name)
+                );
+
             }
 
         });
+
 
         uniqueClasses.sort(function (a, b) {
             return Number(a) - Number(b);
         });
 
+
         uniqueClasses.forEach(function (className) {
 
-            const option = document.createElement("option");
+            const option =
+                document.createElement("option");
 
             option.value = className;
-            option.textContent = "Class " + className;
+
+            option.textContent =
+                "Class " + className;
 
             classSelect.appendChild(option);
+
         });
+
     }
 
 
-    /* =========================
-       CLASS CHANGE
-    ========================= */
+    // =========================
+    // CLASS CHANGE
+    // =========================
 
-    classSelect.addEventListener("change", function () {
+    classSelect.addEventListener(
+        "change",
+        function () {
 
-        const selectedClass = this.value;
-
-        sectionSelect.innerHTML =
-            `<option value="">Select Section</option>`;
-
-        studentCountInput.value = "";
-
-        if (!selectedClass) {
-            return;
-        }
-
-        const matchingClasses =
-            savedClasses.filter(function (classData) {
-
-                return String(classData.className) ===
-                    String(selectedClass);
-
-            });
+            const selectedClass =
+                this.value;
 
 
-        matchingClasses.forEach(function (classData) {
-
-            const option = document.createElement("option");
-
-            option.value = classData.section;
-
-            option.textContent =
-                "Section " + classData.section;
-
-            sectionSelect.appendChild(option);
-        });
-
-    });
+            sectionSelect.innerHTML =
+                `<option value="">Select Section</option>`;
 
 
-    /* =========================
-       SECTION CHANGE
-    ========================= */
+            studentCountInput.value = "";
 
-    sectionSelect.addEventListener("change", function () {
-
-        const selectedClass = classSelect.value;
-        const selectedSection = this.value;
-
-        studentCountInput.value = "";
-
-        if (!selectedClass || !selectedSection) {
-            return;
-        }
+            selectedStudents = [];
 
 
-        const classData =
-            savedClasses.find(function (classData) {
+            if (!selectedClass) {
+                return;
+            }
 
-                return (
-                    String(classData.className) ===
-                        String(selectedClass)
-                    &&
-                    String(classData.section) ===
-                        String(selectedSection)
+
+            const matchingClasses =
+                savedClasses.filter(
+                    function (classData) {
+
+                        return String(
+                            classData.class_name
+                        ) === String(selectedClass);
+
+                    }
                 );
 
-            });
+
+            matchingClasses.forEach(
+                function (classData) {
+
+                    const option =
+                        document.createElement("option");
 
 
-        if (!classData) {
-
-            alert(
-                "Is Class + Section ke students Add Classes mein nahi mile."
-            );
-
-            return;
-        }
+                    option.value =
+                        classData.section;
 
 
-        const students =
-            classData.students || [];
+                    option.textContent =
+                        "Section " +
+                        classData.section;
 
 
-        /* Automatically set student count */
+                    sectionSelect.appendChild(
+                        option
+                    );
 
-        studentCountInput.value = students.length;
-
-
-        if (students.length === 0) {
-
-            alert(
-                "Is Class + Section mein abhi koi student saved nahi hai."
+                }
             );
 
         }
-
-    });
-
-
-    /* =========================
-       ADD CUSTOM SUBJECT
-    ========================= */
-
-    addSubjectBtn.addEventListener("click", function () {
-
-        const subjectName =
-            prompt("Custom subject ka naam enter karo:");
-
-        if (!subjectName || subjectName.trim() === "") {
-            return;
-        }
-
-        const cleanName = subjectName.trim();
+    );
 
 
-        const existingSubjects =
-            Array.from(
-                document.querySelectorAll(
-                    'input[name="subjects"]'
-                )
-            ).map(function (input) {
+    // =========================
+    // SECTION CHANGE
+    // =========================
 
-                return input.value.toLowerCase();
+    sectionSelect.addEventListener(
+        "change",
+        async function () {
 
-            });
+            const selectedClass =
+                classSelect.value;
 
-
-        if (
-            existingSubjects.includes(
-                cleanName.toLowerCase()
-            )
-        ) {
-
-            alert("Ye subject already added hai.");
-
-            return;
-        }
+            const selectedSection =
+                this.value;
 
 
-        const label =
-            document.createElement("label");
+            studentCountInput.value = "";
 
-        label.className = "subject-item";
-
-
-        const checkbox =
-            document.createElement("input");
-
-        checkbox.type = "checkbox";
-        checkbox.name = "subjects";
-        checkbox.value = cleanName;
-        checkbox.checked = true;
+            selectedStudents = [];
 
 
-        label.appendChild(checkbox);
+            if (
+                !selectedClass ||
+                !selectedSection
+            ) {
 
-        label.appendChild(
-            document.createTextNode(" " + cleanName)
-        );
+                return;
 
-
-        subjectList.appendChild(label);
-
-    });
+            }
 
 
-    /* =========================
-       SAVE EXAM
-    ========================= */
+            const classData =
+                savedClasses.find(
+                    function (classData) {
 
-    examForm.addEventListener("submit", function (event) {
+                        return (
+                            String(
+                                classData.class_name
+                            ) === String(selectedClass)
 
-        event.preventDefault();
+                            &&
 
+                            String(
+                                classData.section
+                            ) === String(selectedSection)
+                        );
 
-        const selectedSubjects =
-            Array.from(
-                document.querySelectorAll(
-                    'input[name="subjects"]:checked'
-                )
-            ).map(function (subject) {
-
-                return subject.value;
-
-            });
-
-
-        if (selectedSubjects.length === 0) {
-
-            alert(
-                "कम से कम एक subject select करो।"
-            );
-
-            return;
-        }
-
-
-        const selectedClass =
-            classSelect.value;
-
-        const selectedSection =
-            sectionSelect.value;
-
-
-        /* Find students */
-
-        const classData =
-            savedClasses.find(function (classData) {
-
-                return (
-                    String(classData.className) ===
-                        String(selectedClass)
-                    &&
-                    String(classData.section) ===
-                        String(selectedSection)
+                    }
                 );
 
-            });
+
+            if (!classData) {
+
+                alert(
+                    "Class + Section nahi mila."
+                );
+
+                return;
+
+            }
 
 
-        if (!classData) {
+            // =========================
+            // LOAD STUDENTS
+            // =========================
 
-            alert(
-                "Pehle Add Classes mein is Class + Section ke students add karo."
+            const { data, error } =
+                await db
+                    .from("students")
+                    .select("*")
+                    .eq("class_id", classData.id)
+                    .order("roll_number", {
+                        ascending: true
+                    });
+
+
+            if (error) {
+
+                console.error(error);
+
+                alert(
+                    "Students load nahi ho pa rahe hain."
+                );
+
+                return;
+
+            }
+
+
+            selectedStudents =
+                data || [];
+
+
+            studentCountInput.value =
+                selectedStudents.length;
+
+
+            if (
+                selectedStudents.length === 0
+            ) {
+
+                alert(
+                    "Is Class + Section mein abhi koi student saved nahi hai."
+                );
+
+            }
+
+        }
+    );
+
+
+    // =========================
+    // ADD CUSTOM SUBJECT
+    // =========================
+
+    addSubjectBtn.addEventListener(
+        "click",
+        function () {
+
+            const subjectName =
+                prompt(
+                    "Custom subject ka naam enter karo:"
+                );
+
+
+            if (
+                !subjectName ||
+                subjectName.trim() === ""
+            ) {
+
+                return;
+
+            }
+
+
+            const cleanName =
+                subjectName.trim();
+
+
+            const existingSubjects =
+                Array.from(
+                    document.querySelectorAll(
+                        'input[name="subjects"]'
+                    )
+                ).map(
+                    function (input) {
+
+                        return input.value
+                            .toLowerCase();
+
+                    }
+                );
+
+
+            if (
+                existingSubjects.includes(
+                    cleanName.toLowerCase()
+                )
+            ) {
+
+                alert(
+                    "Ye subject already added hai."
+                );
+
+                return;
+
+            }
+
+
+            const label =
+                document.createElement("label");
+
+            label.className =
+                "subject-item";
+
+
+            const checkbox =
+                document.createElement("input");
+
+            checkbox.type = "checkbox";
+            checkbox.name = "subjects";
+            checkbox.value = cleanName;
+            checkbox.checked = true;
+
+
+            label.appendChild(checkbox);
+
+
+            label.appendChild(
+                document.createTextNode(
+                    " " + cleanName
+                )
             );
 
-            return;
+
+            subjectList.appendChild(label);
+
         }
+    );
 
 
-        const students =
-            classData.students || [];
+    // =========================
+    // SAVE EXAM
+    // =========================
+
+    examForm.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
 
 
-        if (students.length === 0) {
+            const selectedSubjects =
+                Array.from(
+                    document.querySelectorAll(
+                        'input[name="subjects"]:checked'
+                    )
+                ).map(
+                    function (subject) {
+
+                        return subject.value;
+
+                    }
+                );
+
+
+            if (
+                selectedSubjects.length === 0
+            ) {
+
+                alert(
+                    "कम से कम एक subject select करो।"
+                );
+
+                return;
+
+            }
+
+
+            const selectedClass =
+                classSelect.value;
+
+            const selectedSection =
+                sectionSelect.value;
+
+
+            if (
+                !selectedClass ||
+                !selectedSection
+            ) {
+
+                alert(
+                    "Class aur Section select karo."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                selectedStudents.length === 0
+            ) {
+
+                alert(
+                    "Is Class + Section mein koi student nahi hai."
+                );
+
+                return;
+
+            }
+
+
+            const classData =
+                savedClasses.find(
+                    function (classData) {
+
+                        return (
+                            String(
+                                classData.class_name
+                            ) === String(selectedClass)
+
+                            &&
+
+                            String(
+                                classData.section
+                            ) === String(selectedSection)
+                        );
+
+                    }
+                );
+
+
+            if (!classData) {
+
+                alert(
+                    "Selected Class + Section nahi mila."
+                );
+
+                return;
+
+            }
+
+
+            const examName =
+                document
+                    .getElementById("examName")
+                    .value
+                    .trim();
+
+
+            const examYear =
+                document
+                    .getElementById("examYear")
+                    .value
+                    .trim();
+
+
+            const maxMarks =
+                Number(
+                    document
+                        .getElementById("maxMarks")
+                        .value
+                );
+
+
+            const studentCount =
+                selectedStudents.length;
+
+
+            // =========================
+            // INSERT EXAM
+            // =========================
+
+            const { data: exam, error: examError } =
+                await db
+                    .from("exams")
+                    .insert([
+                        {
+                            school_id: schoolId,
+                            class_id: classData.id,
+                            exam_name: examName,
+                            exam_year: examYear,
+                            max_marks: maxMarks,
+                            student_count: studentCount
+                        }
+                    ])
+                    .select()
+                    .single();
+
+
+            if (examError) {
+
+                console.error(examError);
+
+                alert(
+                    "Exam save nahi hua: " +
+                    examError.message
+                );
+
+                return;
+
+            }
+
+
+            // =========================
+            // INSERT SUBJECTS
+            // =========================
+
+            const subjectRows =
+                selectedSubjects.map(
+                    function (subjectName) {
+
+                        return {
+                            exam_id: exam.id,
+                            subject_name: subjectName,
+                            max_marks: maxMarks
+                        };
+
+                    }
+                );
+
+
+            const { error: subjectError } =
+                await db
+                    .from("exam_subjects")
+                    .insert(subjectRows);
+
+
+            if (subjectError) {
+
+                console.error(subjectError);
+
+                alert(
+                    "Exam save ho gaya, lekin subjects save nahi hue: " +
+                    subjectError.message
+                );
+
+                return;
+
+            }
+
+
+            // =========================
+            // INSERT EXAM STUDENTS
+            // =========================
+
+            const examStudentRows =
+                selectedStudents.map(
+                    function (student) {
+
+                        return {
+                            exam_id: exam.id,
+
+                            student_id:
+                                student.id,
+
+                            roll_number_snapshot:
+                                String(
+                                    student.roll_number
+                                ),
+
+                            student_name_snapshot:
+                                student.student_name
+                        };
+
+                    }
+                );
+
+
+            const { error: studentError } =
+                await db
+                    .from("exam_students")
+                    .insert(examStudentRows);
+
+
+            if (studentError) {
+
+                console.error(studentError);
+
+                alert(
+                    "Exam aur subjects save ho gaye, lekin students save nahi hue: " +
+                    studentError.message
+                );
+
+                return;
+
+            }
+
+
+            // =========================
+            // SUCCESS
+            // =========================
 
             alert(
-                "Is Class + Section mein koi student saved nahi hai."
+                "Exam successfully save ho gaya. ✅"
             );
 
-            return;
+
+            window.location.href =
+                "main-dashboard.html";
+
         }
+    );
 
 
-        /* =========================
-           EXAM DATA
-        ========================= */
+    // =========================
+    // INITIAL LOAD
+    // =========================
 
-        const examData = {
-
-            id: Date.now(),
-
-            examName:
-                document.getElementById("examName").value.trim(),
-
-            examYear:
-                document.getElementById("examYear").value.trim(),
-
-            className:
-                selectedClass,
-
-            section:
-                selectedSection,
-
-            subjects:
-                selectedSubjects,
-
-            maxMarks:
-                document.getElementById("maxMarks").value,
-
-            /*
-               Existing field retained
-            */
-            studentCount:
-                document.getElementById("studentCount").value,
-
-            /*
-               Students from Add Classes
-            */
-            students:
-                students,
-
-            createdAt:
-                new Date().toLocaleString()
-        };
-
-
-        let exams =
-            JSON.parse(
-                localStorage.getItem("jnv_exams")
-            ) || [];
-
-
-        exams.push(examData);
-
-
-        localStorage.setItem(
-            "jnv_exams",
-            JSON.stringify(exams)
-        );
-
-
-        alert(
-            "Exam successfully save ho gaya."
-        );
-
-
-        window.location.href =
-            "main-dashboard.html";
-
-    });
+    await loadClasses();
 
 });
-         </script>
+      </script>
     
 
 </body>

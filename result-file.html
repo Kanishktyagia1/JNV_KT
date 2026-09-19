@@ -334,51 +334,54 @@ function updateSummary(){
     fillSummaryRow("summary90Row","90 & above",subjectStats.map(s=>s.r90),percentages.filter(p=>p>=90).length);
 }
 
-async function saveResult() {
+
+        async function saveResult() {
+    calculateResults();
+    updateSummary();
+
     if (!exam || !exam.id) {
-        alert("Exam data not loaded.");
+        alert("Exam data नहीं मिला।");
         return;
     }
 
     try {
-        const studentRows = document.querySelectorAll("#resultTable tbody tr");
-
-        // पहले इस exam के पुराने results हटाओ
+        // इस exam के पुराने marks हटाओ
         const { error: deleteError } = await db
             .from("results")
             .delete()
             .eq("exam_id", exam.id);
 
-        if (deleteError) {
-            throw deleteError;
-        }
+        if (deleteError) throw deleteError;
 
         const resultData = [];
+        const rows = document.querySelectorAll("#resultBody tr");
 
-        studentRows.forEach((row, index) => {
-            const examStudent = examStudents[index];
+        rows.forEach((row, studentIndex) => {
 
-            if (!examStudent || !examStudent.id) return;
+            const student = exam.students[studentIndex];
 
-            const inputs = row.querySelectorAll(".marks-input");
+            if (!student || !student.id) {
+                console.warn("Exam student ID नहीं मिला:", student);
+                return;
+            }
 
-            inputs.forEach((input, subjectIndex) => {
-                const marks = input.value.trim();
+            const markInputs = row.querySelectorAll(".marks");
 
-                // Empty marks ko save nahi karna
-                if (marks === "") return;
+            markInputs.forEach((input, subjectIndex) => {
+
+                if (input.value === "") return;
 
                 resultData.push({
                     exam_id: exam.id,
-                    exam_student_id: examStudent.id,
+                    exam_student_id: student.id,
                     subject: exam.subjects[subjectIndex],
-                    marks: Number(marks)
+                    marks: Number(input.value)
                 });
             });
         });
 
         if (resultData.length === 0) {
-            alert("Please enter marks first.");
+            alert("पहले marks भरें।");
             return;
         }
 
@@ -386,17 +389,22 @@ async function saveResult() {
             .from("results")
             .insert(resultData);
 
-        if (insertError) {
-            throw insertError;
-        }
+        if (insertError) throw insertError;
 
-        alert("Result saved successfully! ✅");
+        document.getElementById("message").textContent =
+            "Result successfully save हो गया. ✅";
+
+        alert("Result Supabase में save हो गया. ✅");
 
     } catch (error) {
         console.error("Save Result Error:", error);
-        alert("Result save nahi hua:\n" + error.message);
+
+        document.getElementById("message").textContent =
+            "Result save नहीं हुआ ❌";
+
+        alert("Result save नहीं हुआ:\n" + error.message);
     }
-  }
+                   }
 
 function loadSavedResult(){
     // Old localStorage marks intentionally load nahi honge.

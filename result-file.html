@@ -329,19 +329,69 @@ function updateSummary(){
     fillSummaryRow("summary90Row","90 & above",subjectStats.map(s=>s.r90),percentages.filter(p=>p>=90).length);
 }
 
-function saveResult(){
-    calculateResults();
-    updateSummary();
-    const students=getStudentData().map(s=>({
-        rollNumber:s.roll,studentName:s.name,marks:s.marks.map(m=>m===null?"":m),
-        total:s.total,percentage:s.row.querySelector(".percentage").textContent,
-        result:s.result,rank:s.rank
-    }));
-    const allResults=JSON.parse(localStorage.getItem("jnv_results"))||{};
-    allResults[exam.id]=students;
-    localStorage.setItem("jnv_results",JSON.stringify(allResults));
-    document.getElementById("message").textContent="Result successfully save ho gaya. ✅";
-}
+async function saveResult() {
+    if (!exam || !exam.id) {
+        alert("Exam data not loaded.");
+        return;
+    }
+
+    try {
+        const studentRows = document.querySelectorAll("#resultTable tbody tr");
+
+        // पहले इस exam के पुराने results हटाओ
+        const { error: deleteError } = await db
+            .from("results")
+            .delete()
+            .eq("exam_id", exam.id);
+
+        if (deleteError) {
+            throw deleteError;
+        }
+
+        const resultData = [];
+
+        studentRows.forEach((row, index) => {
+            const examStudent = examStudents[index];
+
+            if (!examStudent || !examStudent.id) return;
+
+            const inputs = row.querySelectorAll(".marks-input");
+
+            inputs.forEach((input, subjectIndex) => {
+                const marks = input.value.trim();
+
+                // Empty marks ko save nahi karna
+                if (marks === "") return;
+
+                resultData.push({
+                    exam_id: exam.id,
+                    exam_student_id: examStudent.id,
+                    subject: exam.subjects[subjectIndex],
+                    marks: Number(marks)
+                });
+            });
+        });
+
+        if (resultData.length === 0) {
+            alert("Please enter marks first.");
+            return;
+        }
+
+        const { error: insertError } = await db
+            .from("results")
+            .insert(resultData);
+
+        if (insertError) {
+            throw insertError;
+        }
+
+        alert("Result saved successfully! ✅");
+
+    } catch (error) {
+        console.error("Save Result Error:", error);
+        alert("Result save nahi hua:\n" + error.message);
+    }
+  }
 
 function loadSavedResult(){
     // Old localStorage marks intentionally load nahi honge.

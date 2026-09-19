@@ -1,14 +1,84 @@
 const examContainer = document.getElementById("examContainer");
 
+const schoolId = localStorage.getItem("jnv_school_id");
 
-// Load exams from LocalStorage
-let exams = JSON.parse(localStorage.getItem("jnv_exams")) || [];
+let exams = [];
 
 
-// Display all exams
+// ===============================
+// LOAD EXAMS FROM SUPABASE
+// ===============================
+
+async function loadExams() {
+
+    if (!schoolId) {
+        examContainer.innerHTML = `
+            <div class="empty">
+                <h3>⚠️ School Account Not Found</h3>
+                <p>Please login again.</p>
+            </div>
+        `;
+        return;
+    }
+
+    examContainer.innerHTML = `
+        <div class="empty">
+            <h3>⏳ Loading Exams...</h3>
+        </div>
+    `;
+
+
+    const { data, error } = await db
+        .from("exams")
+        .select(`
+            id,
+            exam_name,
+            exam_year,
+            max_marks,
+            student_count,
+            created_at,
+            class_id,
+            classes (
+                class_name,
+                section
+            ),
+            exam_subjects (
+                subject_name
+            )
+        `)
+        .eq("school_id", schoolId)
+        .order("created_at", { ascending: false });
+
+
+    if (error) {
+        console.error(error);
+
+        examContainer.innerHTML = `
+            <div class="empty">
+                <h3>❌ Exams Load Nahi Hue</h3>
+                <p>${escapeHtml(error.message)}</p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    exams = data || [];
+
+    displayExams();
+}
+
+
+
+// ===============================
+// DISPLAY EXAMS
+// ===============================
+
 function displayExams() {
 
     examContainer.innerHTML = "";
+
 
     if (exams.length === 0) {
 
@@ -23,22 +93,29 @@ function displayExams() {
     }
 
 
-    // Latest exam first
-    const sortedExams = [...exams].reverse();
+    exams.forEach(function(exam) {
 
-
-    sortedExams.forEach(function(exam) {
-
-        const studentCount =
-            exam.students && Array.isArray(exam.students)
-                ? exam.students.length
-                : Number(exam.studentCount || 0);
+        const classData = exam.classes || {};
 
 
         const subjects =
-            Array.isArray(exam.subjects)
-                ? exam.subjects.join(", ")
+            Array.isArray(exam.exam_subjects)
+                ? exam.exam_subjects
+                    .map(function(subject) {
+                        return subject.subject_name;
+                    })
+                    .join(", ")
                 : "No subjects";
+
+
+        const studentCount =
+            Number(exam.student_count || 0);
+
+
+        const createdDate =
+            exam.created_at
+                ? new Date(exam.created_at).toLocaleString()
+                : "-";
 
 
         const card = document.createElement("div");
@@ -49,24 +126,24 @@ function displayExams() {
         card.innerHTML = `
 
             <h3>
-                📝 ${escapeHtml(exam.examName || "Unnamed Exam")}
+                📝 ${escapeHtml(exam.exam_name || "Unnamed Exam")}
             </h3>
 
             <div class="exam-info">
 
                 <div>
                     <strong>Academic Year:</strong>
-                    ${escapeHtml(exam.examYear || "-")}
+                    ${escapeHtml(exam.exam_year || "-")}
                 </div>
 
                 <div>
                     <strong>Class:</strong>
-                    ${escapeHtml(exam.className || "-")}
+                    ${escapeHtml(classData.class_name || "-")}
                 </div>
 
                 <div>
                     <strong>Section:</strong>
-                    ${escapeHtml(exam.section || "-")}
+                    ${escapeHtml(classData.section || "-")}
                 </div>
 
                 <div>
@@ -76,7 +153,7 @@ function displayExams() {
 
                 <div>
                     <strong>Max Marks:</strong>
-                    ${escapeHtml(String(exam.maxMarks || "-"))}
+                    ${escapeHtml(String(exam.max_marks || "-"))}
                 </div>
 
                 <div>
@@ -86,7 +163,7 @@ function displayExams() {
 
                 <div>
                     <strong>Created:</strong>
-                    ${escapeHtml(exam.createdAt || "-")}
+                    ${escapeHtml(createdDate)}
                 </div>
 
             </div>
@@ -120,7 +197,10 @@ function displayExams() {
 
 
 
-// Open Result File
+// ===============================
+// OPEN RESULT FILE
+// ===============================
+
 function openResultFile(examId) {
 
     if (!examId) {
@@ -135,7 +215,10 @@ function openResultFile(examId) {
 
 
 
-// Create New Exam
+// ===============================
+// CREATE NEW EXAM
+// ===============================
+
 function createNewExam() {
 
     window.location.href = "create-exam.html";
@@ -144,8 +227,11 @@ function createNewExam() {
 
 
 
-// Delete Exam
-function deleteExam(examId) {
+// ===============================
+// DELETE EXAM
+// ===============================
+
+async function deleteExam(examId) {
 
     const exam = exams.find(function(item) {
         return String(item.id) === String(examId);
@@ -159,7 +245,7 @@ function deleteExam(examId) {
 
 
     const confirmDelete = confirm(
-        `Kya tum "${exam.examName}" ko delete karna chahte ho?`
+        `Kya tum "${exam.exam_name}" ko delete karna chahte ho?`
     );
 
 
@@ -168,80 +254,63 @@ function deleteExam(examId) {
     }
 
 
-    // Remove exam
-    exams = exams.filter(function(item) {
-        return String(item.id) !== String(examId);
-    });
+    // Delete exam students first
+    const { error: studentsError } = await db
+        .from("exam_students")
+        .delete()
+        .eq("exam_id", examId);
 
 
-    // Save updated exams
-    localStorage.setItem(
-        "jnv_exams",
-        JSON.stringify(exams)
-    );
-
-
-    // Remove related assignments
-    let assignments =
-        JSON.parse(
-            localStorage.getItem("jnv_teacher_assignments")
-        ) || [];
-
-
-    assignments = assignments.filter(function(item) {
-        return String(item.examId) !== String(examId);
-    });
-
-
-    localStorage.setItem(
-        "jnv_teacher_assignments",
-        JSON.stringify(assignments)
-    );
-
-
-    // Remove related results
-    let results =
-        JSON.parse(
-            localStorage.getItem("jnv_results")
-        );
-
-
-    if (results) {
-
-        // Old object format
-        if (!Array.isArray(results)) {
-
-            delete results[examId];
-
-            localStorage.setItem(
-                "jnv_results",
-                JSON.stringify(results)
-            );
-
-        }
-
-        // New array format
-        else {
-
-            results = results.filter(function(result) {
-                return String(result.examId) !== String(examId);
-            });
-
-            localStorage.setItem(
-                "jnv_results",
-                JSON.stringify(results)
-            );
-        }
+    if (studentsError) {
+        console.error(studentsError);
+        alert("Exam students delete nahi hue.");
+        return;
     }
 
 
-    displayExams();
+    // Delete exam subjects
+    const { error: subjectsError } = await db
+        .from("exam_subjects")
+        .delete()
+        .eq("exam_id", examId);
+
+
+    if (subjectsError) {
+        console.error(subjectsError);
+        alert("Exam subjects delete nahi hue.");
+        return;
+    }
+
+
+    // Delete exam
+    const { error: examError } = await db
+        .from("exams")
+        .delete()
+        .eq("id", examId)
+        .eq("school_id", schoolId);
+
+
+    if (examError) {
+        console.error(examError);
+        alert("Exam delete nahi hua.");
+        return;
+    }
+
+
+    alert("Exam successfully delete ho gaya. ✅");
+
+
+    // Reload exams
+    loadExams();
 
 }
 
 
 
-// Prevent HTML injection
+// ===============================
+// HTML ESCAPE
+// ===============================
+
 function escapeHtml(value) {
 
     return String(value)
@@ -255,7 +324,10 @@ function escapeHtml(value) {
 
 
 
-// Escape value used inside onclick
+// ===============================
+// JAVASCRIPT ESCAPE
+// ===============================
+
 function escapeJs(value) {
 
     return String(value)
@@ -266,5 +338,8 @@ function escapeJs(value) {
 
 
 
-// Start
-displayExams();
+// ===============================
+// START
+// ===============================
+
+loadExams();

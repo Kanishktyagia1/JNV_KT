@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase Connection Test</title>
+</head>
+<body>
+
+    <h2>Supabase Connection Test</h2>
+    <p id="status">Testing...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <script>
+        async function testConnection() {
+            const { data, error } = await db
+                .from("schools")
+                .select("id")
+                .limit(1);
+
+            if (error) {
+                document.getElementById("status").textContent =
+                    "❌ Connection/Error: " + error.message;
+                console.error(error);
+                return;
+            }
+
+            document.getElementById("status").textContent =
+                "✅ Supabase Connected Successfully!";
+        }
+
+        testConnection();
+    </script>
+
+</body>
+</html>

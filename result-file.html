@@ -522,7 +522,7 @@ if (insertError) {
         alert("Result save नहीं हुआ:\n" + error.message);
     }
   }
-//function loadSavedResult(){
+function loadSavedResult(){
     const allResults=JSON.parse(localStorage.getItem("jnv_results"))||{};
     const saved=allResults[exam.id];
     if(!saved)return;

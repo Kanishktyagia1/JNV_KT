@@ -846,23 +846,49 @@ async function exportToExcel(){
         alert("Excel export karte waqt error aaya.");
     }
 }
-  loadExam().catch(function(error) {
-    console.error("FINAL LOAD ERROR:", error);
+  window.addEventListener("error", function (event) {
+    const box = document.getElementById("examInfo");
 
-    const examInfo = document.getElementById("examInfo");
-    const tableBox = document.getElementById("tableBox");
-
-    if (examInfo) {
-        examInfo.innerHTML = `
-            <div class="not-found">
-                <h3>❌ Error loading exam</h3>
-                <p>${String(error.message || error)}</p>
+    if (box) {
+        box.innerHTML = `
+            <div style="padding:20px;color:red;">
+                <h3>❌ JavaScript Error</h3>
+                <p>${event.message}</p>
             </div>
         `;
     }
 
-    if (tableBox) {
-        tableBox.innerHTML = "";
+    console.error("JS ERROR:", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", function (event) {
+    const box = document.getElementById("examInfo");
+
+    if (box) {
+        box.innerHTML = `
+            <div style="padding:20px;color:red;">
+                <h3>❌ Loading Error</h3>
+                <p>${event.reason?.message || event.reason}</p>
+            </div>
+        `;
+    }
+
+    console.error("PROMISE ERROR:", event.reason);
+});
+
+loadExam().catch(function (error) {
+
+    console.error("LOAD EXAM ERROR:", error);
+
+    const box = document.getElementById("examInfo");
+
+    if (box) {
+        box.innerHTML = `
+            <div style="padding:20px;color:red;">
+                <h3>❌ Exam Load Error</h3>
+                <p>${error.message || error}</p>
+            </div>
+        `;
     }
 });
   </script>

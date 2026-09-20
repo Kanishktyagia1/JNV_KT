@@ -101,6 +101,10 @@ async function loadExam() {console.log("STEP 1: loadExam started");
     }
 
     const { data: examData, error: examError } = await db
+      console.log("STEP 2: exam query finished", {
+    data: examData,
+    error: examError
+});
         .from("exams")
         .select("id, school_id, class_id, exam_name, exam_year, max_marks, student_count")
         .eq("id", examId)

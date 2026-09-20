@@ -491,6 +491,9 @@ async function saveResult() {
             alert("पहले marks भरें।");
             return;
         }
+      console.log("Supabase user:", await db.auth.getUser());
+console.log("Supabase session:", await db.auth.getSession());
+console.log("Result data:", resultData);
 
         const { error: insertError } = await db
     .from("results")

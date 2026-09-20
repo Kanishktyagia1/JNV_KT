@@ -175,7 +175,7 @@ const examInfo = document.getElementById("examInfo");
 const tableBox = document.getElementById("tableBox");
 
 let rowToDelete = null;
-
+function renderExam() {
 if (!exam) {
     examInfo.innerHTML = `
         <div style="padding:20px; text-align:center;">
@@ -281,7 +281,7 @@ if (!exam) {
     document.getElementById("saveResultBtn").addEventListener("click", saveResult);
     document.getElementById("printBtn").addEventListener("click", printResult);
     document.getElementById("excelBtn").addEventListener("click", exportToExcel);
-}
+}}
 
 function escapeHtml(value){
     return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));

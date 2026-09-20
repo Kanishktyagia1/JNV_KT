@@ -474,29 +474,37 @@ function updateSummary(){
             return;
         }
 
-        // Existing result ko delete karo
         for (const item of resultData) {
-            const { error: deleteError } = await db
+
+            // Pehle INSERT try karo
+            const { error: insertError } = await db
                 .from("results")
-                .delete()
-                .eq("exam_id", item.exam_id)
-                .eq("exam_student_id", item.exam_student_id)
-                .eq("subject", item.subject);
+                .insert(item);
 
-            if (deleteError) {
-                console.error(deleteError);
-                throw deleteError;
+            // Agar duplicate hai, to UPDATE karo
+            if (insertError) {
+
+                if (insertError.code === "23505") {
+
+                    const { error: updateError } = await db
+                        .from("results")
+                        .update({
+                            marks: item.marks
+                        })
+                        .eq("exam_id", item.exam_id)
+                        .eq("exam_student_id", item.exam_student_id)
+                        .eq("subject", item.subject);
+
+                    if (updateError) {
+                        console.error(updateError);
+                        throw updateError;
+                    }
+
+                } else {
+                    console.error(insertError);
+                    throw insertError;
+                }
             }
-        }
-
-        // Fresh result insert karo
-        const { error: insertError } = await db
-            .from("results")
-            .insert(resultData);
-
-        if (insertError) {
-            console.error(insertError);
-            throw insertError;
         }
 
         alert("Result saved successfully!");

@@ -554,21 +554,40 @@ function loadSavedResult(){
 
     addMarkListeners();
   };
-    const saved=allResults[exam.id];
-    if(!saved)return;
-    const tbody=document.getElementById("resultBody");
-    saved.forEach((student,index)=>{
-        let row=tbody.querySelectorAll("tr")[index];
-        if(!row){
-            tbody.insertAdjacentHTML("beforeend",createStudentRow(tbody.querySelectorAll("tr").length+1));
-            row=tbody.querySelectorAll("tr")[index];
-        }
-        row.querySelector(".roll-number").value=student.rollNumber||"";
-        row.querySelector(".student-name").value=student.studentName||"";
-        row.querySelectorAll(".marks").forEach((input,i)=>input.value=(student.marks&&student.marks[i]!==undefined)?student.marks[i]:"");
+    async function loadSavedResult() {
+    if (!exam?.id) return;
+
+    const { data: savedResults, error } = await db
+        .from("results")
+        .select("exam_student_id, subject, marks")
+        .eq("exam_id", exam.id);
+
+    if (error) {
+        console.error("Load saved results error:", error);
+        return;
+    }
+
+    const rows = document.querySelectorAll("#resultBody tr");
+
+    rows.forEach((row, index) => {
+        const student = exam.students[index];
+        if (!student) return;
+
+        row.querySelectorAll(".marks").forEach((input, subjectIndex) => {
+            const subject = exam.subjects[subjectIndex];
+
+            const saved = savedResults.find(
+                r =>
+                    r.exam_student_id === student.id &&
+                    r.subject === subject
+            );
+
+            input.value = saved ? saved.marks : "";
+        });
     });
+
     addMarkListeners();
-}
+  }
 
 function addStudent(){
     const tbody=document.getElementById("resultBody");

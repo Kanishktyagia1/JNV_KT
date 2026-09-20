@@ -846,7 +846,25 @@ async function exportToExcel(){
         alert("Excel export karte waqt error aaya.");
     }
 }
-  loadExam();
+  loadExam().catch(function(error) {
+    console.error("FINAL LOAD ERROR:", error);
+
+    const examInfo = document.getElementById("examInfo");
+    const tableBox = document.getElementById("tableBox");
+
+    if (examInfo) {
+        examInfo.innerHTML = `
+            <div class="not-found">
+                <h3>❌ Error loading exam</h3>
+                <p>${String(error.message || error)}</p>
+            </div>
+        `;
+    }
+
+    if (tableBox) {
+        tableBox.innerHTML = "";
+    }
+});
   </script>
 </body>
 </html>

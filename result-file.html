@@ -448,34 +448,16 @@ function updateSummary(){
     fillSummaryRow("summary90Row","90 & above",subjectStats.map(s=>s.r90),percentages.filter(p=>p>=90).length);
 }
 
-async function saveResult() {
-    calculateResults();
-    updateSummary();
-
-    if (!exam || !exam.id) {
-        alert("Exam data नहीं मिला।");
-        return;
-    }
-
+      async function saveResult() {
     try {
-        
-
-        const resultData = [];
         const rows = document.querySelectorAll("#resultBody tr");
+        const resultData = [];
 
         rows.forEach((row, studentIndex) => {
-
             const student = exam.students[studentIndex];
+            if (!student) return;
 
-            if (!student || !student.id) {
-                console.warn("Exam student ID नहीं मिला:", student);
-                return;
-            }
-
-            const markInputs = row.querySelectorAll(".marks");
-
-            markInputs.forEach((input, subjectIndex) => {
-
+            row.querySelectorAll(".marks").forEach((input, subjectIndex) => {
                 if (input.value === "") return;
 
                 resultData.push({
@@ -488,36 +470,40 @@ async function saveResult() {
         });
 
         if (resultData.length === 0) {
-            alert("पहले marks भरें।");
+            alert("Please enter marks first.");
             return;
         }
-      console.log("Supabase user:", await db.auth.getUser());
-console.log("Supabase session:", await db.auth.getSession());
-console.log("Result data:", resultData);
 
+        // Existing result ko delete karo
+        for (const item of resultData) {
+            const { error: deleteError } = await db
+                .from("results")
+                .delete()
+                .eq("exam_id", item.exam_id)
+                .eq("exam_student_id", item.exam_student_id)
+                .eq("subject", item.subject);
+
+            if (deleteError) {
+                console.error(deleteError);
+                throw deleteError;
+            }
+        }
+
+        // Fresh result insert karo
         const { error: insertError } = await db
-    .from("results")
-    .insert(resultData);
+            .from("results")
+            .insert(resultData);
 
-if (insertError) {
-    console.error(insertError);
-    throw insertError;
-}
+        if (insertError) {
+            console.error(insertError);
+            throw insertError;
+        }
 
-        
-
-        document.getElementById("message").textContent =
-            "Result successfully save हो गया. ✅";
-
-        alert("Result Supabase में save हो गया. ✅");
+        alert("Result saved successfully!");
 
     } catch (error) {
-        console.error("Save Result Error:", error);
-
-        document.getElementById("message").textContent =
-            "Result save नहीं हुआ ❌";
-
-        alert("Result save नहीं हुआ:\n" + error.message);
+        console.error(error);
+        alert("Result save nahi hua: " + error.message);
     }
   }
 async function loadSavedResult() {

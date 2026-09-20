@@ -499,9 +499,7 @@ async function saveResult() {
 
         const { error: insertError } = await db
     .from("results")
-    .upsert(resultData, {
-        onConflict: "exam_id,exam_student_id,subject"
-    });
+    .insert(resultData);
 
 if (insertError) {
     console.error(insertError);

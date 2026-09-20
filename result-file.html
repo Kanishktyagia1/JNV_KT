@@ -549,4 +549,62 @@ async function exportToExcel(){
     ws.getColumn(rankCol).width=9;
 
     const border={
-        top:{style:"thin"},left:{style
+        top:{style:"thin"},left:{style:"thin"},
+        bottom:{style:"thin"},right:{style:"thin"}
+    };
+
+    ws.mergeCells(1,1,1,totalCols);
+    ws.getCell(1,1).value=schoolName.toUpperCase();
+    ws.getCell(1,1).font={bold:true,size:16};
+    ws.getCell(1,1).alignment={horizontal:"center",vertical:"middle"};
+    ws.getRow(1).height=25;
+
+    ws.mergeCells(2,1,2,totalCols);
+    ws.getCell(2,1).value=address;
+    ws.getCell(2,1).font={size:10};
+    ws.getCell(2,1).alignment={horizontal:"center",vertical:"middle"};
+
+    const leftEnd=Math.floor(totalCols/3);
+    const middleEnd=Math.floor(totalCols*2/3);
+
+    ws.mergeCells(3,1,3,leftEnd);
+    ws.mergeCells(3,leftEnd+1,3,middleEnd);
+    ws.mergeCells(3,middleEnd+1,3,totalCols);
+
+    const titleCells=[
+        [3,1,"CLASS "+(exam.className||"")+" - "+(exam.section||"")],
+        [3,leftEnd+1,(exam.examName||"BOARD RESULT").toUpperCase()],
+        [3,middleEnd+1,"Session "+(exam.examYear||"")]
+    ];
+
+    titleCells.forEach(([r,c,v])=>{
+        const cell=ws.getCell(r,c);
+        cell.value=v;
+        cell.font={bold:true,size:12};
+        cell.alignment={horizontal:"center",vertical:"middle"};
+    });
+    ws.getRow(3).height=22;
+
+    const headers=["S. No.","Student Name",...subjects,"TOTAL","%AGE","RANK"];
+    headers.forEach((h,i)=>{
+        const cell=ws.getCell(5,i+1);
+        cell.value=h;
+        cell.font={bold:true,size:10};
+        cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+        cell.border=border;
+    });
+    ws.getRow(5).height=25;
+
+    const students=getStudentData().filter(s=>s.name||s.roll||s.hasMarks);
+
+    const ranked=[...students].filter(s=>s.hasMarks).sort((a,b)=>b.total-a.total);
+    let rank=0,prev=null;
+    ranked.forEach((s,i)=>{
+        if(s.total!==prev){rank=i+1;prev=s.total;}
+        s.rank=rank;
+    });
+    students.forEach(s=>{if(!s.hasMarks)s.rank="";});
+
+    let rowNo=6;
+    students.forEach((s,i)=>{
+        const values=[i+1,s.name,...s.marks.map(m=>m===null?"":m),s.total,s.hasMarks?Number(s.percentage.toFixed(1)):"",s.rank];

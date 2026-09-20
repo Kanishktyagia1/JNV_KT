@@ -93,7 +93,7 @@ const schoolId = localStorage.getItem("jnv_school_id");
 
 let exam = null;
 
-async function loadExam() {
+async function loadExam() {console.log("STEP 1: loadExam started");
     if (!examId || !schoolId) {
         document.getElementById("examInfo").innerHTML =
             "<div class='not-found'>Exam information not found.</div>";

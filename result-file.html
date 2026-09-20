@@ -498,8 +498,17 @@ async function saveResult() {
         }
 
         const { error: insertError } = await db
-            .from("results")
-            .insert(resultData);
+            const { error } = await db
+    .from("results")
+    .upsert(resultData, {
+        onConflict: "exam_id,exam_student_id,subject"
+    });
+
+if (error) {
+    console.error(error);
+    alert("Result save nahi hua: " + error.message);
+    return;
+              };
 
         if (insertError) throw insertError;
 

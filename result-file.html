@@ -608,3 +608,89 @@ async function exportToExcel(){
     let rowNo=6;
     students.forEach((s,i)=>{
         const values=[i+1,s.name,...s.marks.map(m=>m===null?"":m),s.total,s.hasMarks?Number(s.percentage.toFixed(1)):"",s.rank];
+      values.forEach((v,j)=>{
+            const cell=ws.getCell(rowNo,j+1);
+            cell.value=v;
+            cell.border=border;
+            cell.font={size:10};
+            cell.alignment={horizontal:j===1?"left":"center",vertical:"middle"};
+        });
+        rowNo++;
+    });
+
+    const summaryStart=rowNo;
+    const labels=["TOTAL","APPEARED STUDENTS","SUBJECT AVERAGE","PASS PERCENTAGE","below 33","33 to 59","60 to 74","75 to 89","90 & above"];
+
+    const appeared=students.filter(s=>s.hasMarks);
+    const stats=subjects.map((_,i)=>{
+        const marks=appeared.map(s=>s.marks[i]).filter(m=>m!==null);
+        const count=marks.length,total=marks.reduce((a,b)=>a+b,0);
+        const pass=marks.filter(m=>m>=33).length;
+        return {
+            total,appeared:count,average:count?Math.round(total/count):0,
+            passPercentage:count?(pass/count*100).toFixed(1)+"%":"0%",
+            below33:marks.filter(m=>m<33).length,
+            r33to59:marks.filter(m=>m>=33&&m<60).length,
+            r60to74:marks.filter(m=>m>=60&&m<75).length,
+            r75to89:marks.filter(m=>m>=75&&m<90).length,
+            r90:marks.filter(m=>m>=90).length
+        };
+    });
+
+    const percentages=appeared.map(s=>s.percentage);
+    const overall=[
+        "",
+        appeared.length,
+        "",
+        percentages.length?(percentages.filter(p=>p>=33).length/percentages.length*100).toFixed(1)+"%":"0%",
+        percentages.filter(p=>p<33).length,
+        percentages.filter(p=>p>=33&&p<60).length,
+        percentages.filter(p=>p>=60&&p<75).length,
+        percentages.filter(p=>p>=75&&p<90).length,
+        percentages.filter(p=>p>=90).length
+    ];
+
+    labels.forEach((label,i)=>{
+        const r=summaryStart+i;
+        ws.mergeCells(r,1,r,2);
+        const c=ws.getCell(r,1);
+        c.value=label;c.font={bold:true,size:10};c.alignment={horizontal:"left",vertical:"middle"};c.border=border;
+    });
+
+    stats.forEach((s,i)=>{
+        const values=[s.total,s.appeared,s.average,s.passPercentage,s.below33,s.r33to59,s.r60to74,s.r75to89,s.r90];
+      values.forEach((v,j)=>{
+            const c=ws.getCell(summaryStart+j,subjectStart+i);
+            c.value=v;c.border=border;c.font={size:10};c.alignment={horizontal:"center",vertical:"middle"};
+        });
+    });
+
+    overall.forEach((v,i)=>{
+        const c=ws.getCell(summaryStart+i,totalCol);
+        c.value=v;c.border=border;c.font={size:10};c.alignment={horizontal:"center",vertical:"middle"};
+    });
+
+    for(let i=0;i<9;i++)ws.getRow(summaryStart+i).height=20;
+
+    ws.views=[{state:"frozen",ySplit:5}];
+
+    try{
+        const buffer=await workbook.xlsx.writeBuffer();
+        const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+        const url=URL.createObjectURL(blob);
+        const link=document.createElement("a");
+        link.href=url;
+        link.download=schoolName.replace(/[^a-z0-9]/gi,"_")+"_Result.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        document.getElementById("message").textContent="Excel successfully export ho gayi. 📊✅";
+    }catch(error){
+        console.error(error);
+        alert("Excel export karte waqt error aaya.");
+    }
+}
+</script>
+</body>
+</html>

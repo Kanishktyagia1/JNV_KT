@@ -548,39 +548,61 @@ async function loadSavedResult() {
 
     if (error) {
         console.error("Load saved results error:", error);
-        document.getElementById("message").textContent =
-            "Saved result load nahi hua: " + error.message;
+
+        const message = document.getElementById("message");
+        if (message) {
+            message.textContent =
+                "Saved result load nahi hua: " + error.message;
+        }
+
         return;
     }
 
+    console.log("Saved results from Supabase:", savedResults);
+
     const resultMap = new Map();
 
-    (savedResults || []).forEach(item => {
-        resultMap.set(
-            `${item.exam_student_id}__${item.subject}`,
-            item.marks
-        );
+    (savedResults || []).forEach(function (item) {
+
+        const key =
+            String(item.exam_student_id) +
+            "__" +
+            String(item.subject);
+
+        resultMap.set(key, item.marks);
     });
 
-    document.querySelectorAll("#resultBody tr").forEach(row => {
-        const studentId = row.dataset.studentId;
-        const student = exam.students.find(s => s.id === studentId);
+    document.querySelectorAll("#resultBody tr").forEach(function (row) {
 
-        if (!student?.id) return;
+        const studentId =
+            String(row.dataset.studentId || "");
 
-        row.querySelectorAll(".marks").forEach((input, subjectIndex) => {
-            const subject = exam.subjects[subjectIndex];
-            const key = `${student.id}__${subject}`;
+        if (!studentId) return;
 
-            input.value = resultMap.has(key)
-                ? resultMap.get(key)
-                : "";
+        const marksInputs =
+            row.querySelectorAll(".marks");
+
+        marksInputs.forEach(function (input, subjectIndex) {
+
+            const subject =
+                String(exam.subjects[subjectIndex] || "");
+
+            const key =
+                studentId + "__" + subject;
+
+            if (resultMap.has(key)) {
+                input.value = resultMap.get(key);
+            } else {
+                input.value = "";
+            }
+
         });
+
     });
 
     calculateResults();
     updateSummary();
-}
+      }
 
 function addStudent(){
     const tbody=document.getElementById("resultBody");

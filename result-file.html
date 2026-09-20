@@ -177,7 +177,7 @@ const examInfo = document.getElementById("examInfo");
 const tableBox = document.getElementById("tableBox");
 
 let rowToDelete = null;
-function renderExam() {
+async function renderExam() {
 if (!exam) {
     examInfo.innerHTML = `
         <div style="padding:20px; text-align:center;">

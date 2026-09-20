@@ -457,13 +457,7 @@ async function saveResult() {
     }
 
     try {
-        // इस exam के पुराने marks हटाओ
-        const { error: deleteError } = await db
-            .from("results")
-            .delete()
-            .eq("exam_id", exam.id);
-
-        if (deleteError) throw deleteError;
+        
 
         const resultData = [];
         const rows = document.querySelectorAll("#resultBody tr");

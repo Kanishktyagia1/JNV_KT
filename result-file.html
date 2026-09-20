@@ -523,10 +523,10 @@ async function loadSavedResult() {
         .eq("exam_id", exam.id);
 
     if (error) {
-    console.error("Load saved results error:", error);
-    alert("Result load nahi hua: " + error.message);
-    return;
-      }
+        console.error("Load saved results error:", error);
+        return;
+    }
+
     const rows = document.querySelectorAll("#resultBody tr");
 
     rows.forEach((row, index) => {

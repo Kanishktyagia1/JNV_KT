@@ -88,25 +88,88 @@ const params = new URLSearchParams(window.location.search);
 
 const examId = params.get("id") || params.get("examId");
 
-let exams = [];
-try {
-    exams = JSON.parse(localStorage.getItem("jnv_exams") || "[]");
-} catch (error) {
-    exams = [];
-}
+const schoolId = localStorage.getItem("jnv_school_id");
 
 let exam = null;
 
-if (examId) {
-    exam = exams.find(function(item) {
-        return String(item.id).trim() === String(examId).trim();
-    });
-}
+async function loadExam() {
+    if (!examId || !schoolId) {
+        document.getElementById("examInfo").innerHTML =
+            "<div class='not-found'>Exam information not found.</div>";
+        return;
+    }
 
-// URL ID na mile to latest exam use karo
-if (!exam && exams.length > 0) {
-    exam = exams[exams.length - 1];
-}
+    const { data: examData, error: examError } = await db
+        .from("exams")
+        .select("id, school_id, class_id, exam_name, exam_year, max_marks, student_count")
+        .eq("id", examId)
+        .eq("school_id", schoolId)
+        .single();
+
+    if (examError || !examData) {
+        console.error(examError);
+        document.getElementById("examInfo").innerHTML =
+            "<div class='not-found'>Exam not found.</div>";
+        return;
+    }
+
+    const { data: schoolData } = await db
+        .from("schools")
+        .select("school_name, school_address, state, district")
+        .eq("id", schoolId)
+        .single();
+
+    const { data: classData } = await db
+        .from("classes")
+        .select("class_name, section")
+        .eq("id", examData.class_id)
+        .single();
+
+    const { data: subjectData, error: subjectError } = await db
+        .from("exam_subjects")
+        .select("id, subject_name, max_marks")
+        .eq("exam_id", examId)
+        .order("created_at", { ascending: true });
+
+    if (subjectError) {
+        console.error(subjectError);
+        return;
+    }
+
+    const { data: examStudents, error: studentError } = await db
+        .from("exam_students")
+        .select("id, student_id, roll_number_snapshot, student_name_snapshot")
+        .eq("exam_id", examId)
+        .order("roll_number_snapshot", { ascending: true });
+
+    if (studentError) {
+        console.error(studentError);
+        return;
+    }
+
+    exam = {
+        id: examData.id,
+        schoolName: schoolData?.school_name || "",
+        schoolAddress: schoolData?.school_address || "",
+        state: schoolData?.state || "",
+        district: schoolData?.district || "",
+        examName: examData.exam_name || "",
+        examYear: examData.exam_year || "",
+        className: classData?.class_name || "",
+        section: classData?.section || "",
+        maxMarks: Number(examData.max_marks || 0),
+        subjects: (subjectData || []).map(s => s.subject_name),
+        subjectDetails: subjectData || [],
+        students: (examStudents || []).map(s => ({
+            id: s.id,
+            studentId: s.student_id,
+            rollNumber: s.roll_number_snapshot || "",
+            studentName: s.student_name_snapshot || ""
+        }))
+    };
+
+    renderExam();
+  }
 
 const examInfo = document.getElementById("examInfo");
 const tableBox = document.getElementById("tableBox");

@@ -1,5 +1,16 @@
 const saveTeacher = document.getElementById("saveTeacher");
 const teacherList = document.getElementById("teacherList");
+const teacherSubject = document.getElementById("teacherSubject");
+const customSubject = document.getElementById("customSubject");
+
+teacherSubject.addEventListener("change", function () {
+    if (this.value === "Custom") {
+        customSubject.style.display = "block";
+    } else {
+        customSubject.style.display = "none";
+        customSubject.value = "";
+    }
+});
 
 saveTeacher.addEventListener("click", async function () {
 
@@ -12,8 +23,12 @@ saveTeacher.addEventListener("click", async function () {
     const teacherPassword =
         document.getElementById("teacherPassword").value;
 
-    const teacherSubject =
-        document.getElementById("teacherSubject").value;
+    let teacherSubject =
+    document.getElementById("teacherSubject").value;
+
+if (teacherSubject === "Custom") {
+    teacherSubject = customSubject.value.trim();
+}
 
     const schoolId =
         localStorage.getItem("jnv_school_id");

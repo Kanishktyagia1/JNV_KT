@@ -547,6 +547,17 @@ function openResultFile(examId) {
 }
 
 loadRecentExams();
+      document.getElementById("logoutBtn").addEventListener("click", async function (e) {
+    e.preventDefault();
+
+    await db.auth.signOut();
+
+    localStorage.removeItem("jnv_logged_in");
+    localStorage.removeItem("jnv_user_role");
+    localStorage.removeItem("jnv_school_id");
+
+    window.location.href = "login.html";
+});
     </script>
 
 

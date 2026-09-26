@@ -550,13 +550,21 @@ loadRecentExams();
       document.getElementById("logoutBtn").addEventListener("click", async function (e) {
     e.preventDefault();
 
-    await db.auth.signOut();
+    console.log("Logout clicked");
 
-    localStorage.removeItem("jnv_logged_in");
-    localStorage.removeItem("jnv_user_role");
-    localStorage.removeItem("jnv_school_id");
+    const { error } = await db.auth.signOut();
 
-    window.location.href = "login.html";
+    if (error) {
+        console.error("Logout error:", error);
+        alert("Logout failed: " + error.message);
+        return;
+    }
+
+    localStorage.clear();
+
+    alert("Logged out successfully ✅");
+
+    window.location.replace("login.html");
 });
     </script>
 

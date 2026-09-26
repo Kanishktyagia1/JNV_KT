@@ -1,7 +1,7 @@
 // ===============================
 // TEACHER RESULT ENTRY - SUPABASE
 // ===============================
-
+console.log("TEACHER RESULT JS LOADED");
 document.addEventListener("DOMContentLoaded", async function () {
 
     // ===============================

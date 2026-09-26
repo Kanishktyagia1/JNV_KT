@@ -919,12 +919,18 @@ async function exportToExcel(){
         };
     });
 
-    const percentages=appeared.map(s=>s.percentage);
-    const overall=[
-        "",
-        appeared.length,
-        "",
-        percentages.length?(percentages.filter(p=>p>=33).length/percentages.length*100).toFixed(1)+"%":"0%",
+    const percentages = appeared.map(
+    s => s.percentage
+);
+
+const overallPass = appeared.filter(
+    s => s.result === "Pass"
+).length;
+
+const overallPassPct =
+    appeared.length
+        ? (overallPass / appeared.length * 100).toFixed(1) + "%"
+        : "0%";
         percentages.filter(p=>p<33).length,
         percentages.filter(p=>p>=33&&p<60).length,
         percentages.filter(p=>p>=60&&p<75).length,

@@ -7,8 +7,9 @@
     <title>Create Account | JNV Result Manager</title>
 
     <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
 
     <style>
         body {
@@ -75,6 +76,7 @@
             font-size: 15px;
             outline: none;
             background: white;
+            box-sizing: border-box;
         }
 
         .form-group input:focus,
@@ -155,15 +157,18 @@
             </div>
 
             <div class="signup-note">
-                Admim or School Administrator should create this account.
+                Admin or School Administrator should create this account.
             </div>
 
             <form id="signupForm">
+
+                <!-- School + Admin -->
 
                 <div class="form-row">
 
                     <div class="form-group">
                         <label for="schoolName">School Name</label>
+
                         <input
                             type="text"
                             id="schoolName"
@@ -174,6 +179,7 @@
 
                     <div class="form-group">
                         <label for="teacherName">Admin</label>
+
                         <input
                             type="text"
                             id="teacherName"
@@ -184,54 +190,89 @@
 
                 </div>
 
+
+                <!-- Address -->
+
                 <div class="form-group">
-                    <label for="schoolAddress">School Address</label>
+
+                    <label for="schoolAddress">
+                        School Address
+                    </label>
+
                     <input
                         type="text"
                         id="schoolAddress"
                         placeholder="Enter complete school address"
                         required
                     >
+
                 </div>
+
+
+                <!-- State + District -->
 
                 <div class="form-row">
 
                     <div class="form-group">
-                        <label for="state">State</label>
+
+                        <label for="state">
+                            State
+                        </label>
+
                         <input
                             type="text"
                             id="state"
                             placeholder="Enter state"
                             required
                         >
+
                     </div>
 
+
                     <div class="form-group">
-                        <label for="district">District</label>
+
+                        <label for="district">
+                            District
+                        </label>
+
                         <input
                             type="text"
                             id="district"
                             placeholder="Enter district"
                             required
                         >
+
                     </div>
 
                 </div>
 
+
+                <!-- Email + Mobile -->
+
                 <div class="form-row">
 
                     <div class="form-group">
-                        <label for="email">Registered Email</label>
+
+                        <label for="email">
+                            Registered Email
+                        </label>
+
                         <input
                             type="email"
                             id="email"
                             placeholder="Enter email address"
                             required
                         >
+
                     </div>
 
+
                     <div class="form-group">
-                        <label for="mobile">Mobile Number</label>
+
+                        <label for="mobile">
+                            Mobile Number
+                        </label>
+
                         <input
                             type="tel"
                             id="mobile"
@@ -239,223 +280,459 @@
                             pattern="[0-9]{10}"
                             required
                         >
+
                     </div>
 
                 </div>
+
+
+                <!-- Passwords -->
 
                 <div class="form-row">
 
                     <div class="form-group">
-    <label for="password">Create Password</label>
 
-    <div style="position: relative;">
-        <input
-            type="password"
-            id="password"
-            placeholder="Create password"
-            minlength="6"
-            required
-            style="padding-right: 45px;"
-        >
+                        <label for="password">
+                            Create Password
+                        </label>
 
-        <button
-            type="button"
-            id="togglePassword"
-            style="
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                border: none;
-                background: none;
-                cursor: pointer;
-                font-size: 18px;
-            "
-        >👁️</button>
-    </div>
+                        <div style="position: relative;">
+
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="Create password"
+                                minlength="6"
+                                required
+                                style="padding-right: 45px;"
+                            >
+
+                            <button
+                                type="button"
+                                id="togglePassword"
+                                style="
+                                    position: absolute;
+                                    right: 10px;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    border: none;
+                                    background: none;
+                                    cursor: pointer;
+                                    font-size: 18px;
+                                "
+                            >
+                                👁️
+                            </button>
+
+                        </div>
+
                     </div>
 
+
                     <div class="form-group">
-    <label for="confirmPassword">Confirm Password</label>
 
-    <div style="position: relative;">
-        <input
-            type="password"
-            id="confirmPassword"
-            placeholder="Confirm password"
-            minlength="6"
-            required
-            style="padding-right: 45px;"
-        >
+                        <label for="confirmPassword">
+                            Confirm Password
+                        </label>
 
-        <button
-            type="button"
-            id="toggleConfirmPassword"
-            style="
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                border: none;
-                background: none;
-                cursor: pointer;
-                font-size: 18px;
-            "
-        >👁️</button>
-    </div>
+                        <div style="position: relative;">
+
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                placeholder="Confirm password"
+                                minlength="6"
+                                required
+                                style="padding-right: 45px;"
+                            >
+
+                            <button
+                                type="button"
+                                id="toggleConfirmPassword"
+                                style="
+                                    position: absolute;
+                                    right: 10px;
+                                    top: 50%;
+                                    transform: translateY(-50%);
+                                    border: none;
+                                    background: none;
+                                    cursor: pointer;
+                                    font-size: 18px;
+                                "
+                            >
+                                👁️
+                            </button>
+
+                        </div>
+
                     </div>
 
                 </div>
 
-                <button type="submit" class="signup-submit">
+
+                <!-- Submit -->
+
+                <button
+                    type="submit"
+                    class="signup-submit"
+                >
                     Create Account
                 </button>
 
             </form>
 
+
             <div class="signup-links">
+
                 Already have an account?
-                <a href="login.html">Login here</a>
+
+                <a href="login.html">
+                    Login here
+                </a>
+
             </div>
 
         </div>
 
-        <a href="index.html" class="back-home">
+
+        <a
+            href="index.html"
+            class="back-home"
+        >
             ← Back to Home
         </a>
 
     </div>
 
-        <script>
-const signupForm = document.getElementById("signupForm");
 
-signupForm.addEventListener("submit", async function(event) {
-    event.preventDefault();
+    <script>
 
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
+        const signupForm =
+            document.getElementById("signupForm");
 
-    if (password !== confirmPassword) {
-        alert("Passwords match nahi kar rahe.");
-        return;
-    }
 
-    const schoolName = document.getElementById("schoolName").value.trim();
-    const teacherName = document.getElementById("teacherName").value.trim();
-    const schoolAddress = document.getElementById("schoolAddress").value.trim();
-    const state = document.getElementById("state").value.trim();
-    const district = document.getElementById("district").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const mobile = document.getElementById("mobile").value.trim();
+        signupForm.addEventListener(
+            "submit",
+            async function(event) {
 
-    try {
+                event.preventDefault();
 
-        // 1. Create Supabase Auth account
-        const { data: authData, error: authError } =
-            await db.auth.signUp({
-                email: email,
-                password: password
-            });
 
-        if (authError) {
-            console.error("Auth signup error:", authError);
-            alert("Account has not been created.\n\n" + authError.message);
-            return;
-        }
+                // ==============================
+                // GET FORM VALUES
+                // ==============================
 
-        if (!authData.user) {
-            alert("Auth account has not been created.");
-            return;
-        }
+                const schoolName =
+                    document
+                        .getElementById("schoolName")
+                        .value
+                        .trim();
 
-        
-        //2. Save signup information temporarily
-localStorage.setItem("pending_school_signup", JSON.stringify({
-    school_name: schoolName,
-    school_address: schoolAddress,
-    state: state,
-    district: district,
-    admin_name: teacherName,
-    email: email,
-    mobile: mobile
-}));
 
-alert(
-    "Your account has been created. ✅\n\n" +
-    "Please check your email and click the verification link.\n\n" +
-    "After verification, login to complete your school registration."
-);
+                const teacherName =
+                    document
+                        .getElementById("teacherName")
+                        .value
+                        .trim();
 
-window.location.href = "login.html";
 
-        // 3. Save school ID
-        alert(
-    "Your account has been created. ✅\n\n" +
-    "Please check your email and click on verification link. " +
-    "After verification you can login."
-);
+                const schoolAddress =
+                    document
+                        .getElementById("schoolAddress")
+                        .value
+                        .trim();
 
-window.location.href = "login.html";
 
-    } catch (error) {
+                const state =
+                    document
+                        .getElementById("state")
+                        .value
+                        .trim();
 
-        console.error("Signup error:", error);
 
-        alert(
-            "Signup mein problem hui.\n\n" +
-            error.message
+                const district =
+                    document
+                        .getElementById("district")
+                        .value
+                        .trim();
+
+
+                const email =
+                    document
+                        .getElementById("email")
+                        .value
+                        .trim();
+
+
+                const mobile =
+                    document
+                        .getElementById("mobile")
+                        .value
+                        .trim();
+
+
+                const password =
+                    document
+                        .getElementById("password")
+                        .value;
+
+
+                const confirmPassword =
+                    document
+                        .getElementById("confirmPassword")
+                        .value;
+
+
+                // ==============================
+                // PASSWORD CHECK
+                // ==============================
+
+                if (password !== confirmPassword) {
+
+                    alert(
+                        "Passwords match nahi kar rahe."
+                    );
+
+                    return;
+                }
+
+
+                // ==============================
+                // CREATE AUTH ACCOUNT
+                // ==============================
+
+                try {
+
+                    const {
+                        data: authData,
+                        error: authError
+                    } = await db.auth.signUp({
+
+                        email: email,
+
+                        password: password
+
+                    });
+
+
+                    if (authError) {
+
+                        console.error(
+                            "Auth signup error:",
+                            authError
+                        );
+
+                        alert(
+                            "Account has not been created.\n\n" +
+                            authError.message
+                        );
+
+                        return;
+                    }
+
+
+                    if (!authData.user) {
+
+                        alert(
+                            "Auth account has not been created."
+                        );
+
+                        return;
+                    }
+
+
+                    // ==============================
+                    // SAVE SCHOOL INFORMATION
+                    // ==============================
+
+                    const schoolData = {
+
+                        school_name:
+                            schoolName,
+
+                        school_address:
+                            schoolAddress,
+
+                        state:
+                            state,
+
+                        district:
+                            district,
+
+                        admin_name:
+                            teacherName,
+
+                        email:
+                            email,
+
+                        mobile:
+                            mobile,
+
+                        auth_user_id:
+                            authData.user.id
+
+                    };
+
+
+                    const {
+                        data: school,
+                        error: schoolError
+                    } = await db
+                        .from("schools")
+                        .insert([schoolData])
+                        .select()
+                        .single();
+
+
+                    if (schoolError) {
+
+                        console.error(
+                            "School insert error:",
+                            schoolError
+                        );
+
+                        alert(
+                            "Account created, but school profile could not be saved.\n\n" +
+                            schoolError.message
+                        );
+
+                        return;
+                    }
+
+
+                    // ==============================
+                    // SAVE SCHOOL ID
+                    // ==============================
+
+                    localStorage.setItem(
+                        "jnv_school_id",
+                        school.id
+                    );
+
+
+                    // ==============================
+                    // SUCCESS
+                    // ==============================
+
+                    alert(
+                        "Admin account successfully created. ✅"
+                    );
+
+
+                    window.location.href =
+                        "login.html";
+
+                }
+
+
+                catch (error) {
+
+                    console.error(
+                        "Signup error:",
+                        error
+                    );
+
+                    alert(
+                        "Signup mein problem hui.\n\n" +
+                        error.message
+                    );
+
+                }
+
+            }
         );
-    }
-});
-
-              
 
 
-// Password show/hide
-const togglePassword =
-    document.getElementById("togglePassword");
+        // ==============================
+        // SHOW / HIDE PASSWORD
+        // ==============================
 
-const toggleConfirmPassword =
-    document.getElementById("toggleConfirmPassword");
-
-const passwordInput =
-    document.getElementById("password");
-
-const confirmPasswordInput =
-    document.getElementById("confirmPassword");
+        const togglePassword =
+            document.getElementById(
+                "togglePassword"
+            );
 
 
-togglePassword.addEventListener("click", function() {
-
-    if (passwordInput.type === "password") {
-
-        passwordInput.type = "text";
-        togglePassword.textContent = "🙈";
-
-    } else {
-
-        passwordInput.type = "password";
-        togglePassword.textContent = "👁️";
-
-    }
-});
+        const toggleConfirmPassword =
+            document.getElementById(
+                "toggleConfirmPassword"
+            );
 
 
-toggleConfirmPassword.addEventListener("click", function() {
+        const passwordInput =
+            document.getElementById(
+                "password"
+            );
 
-    if (confirmPasswordInput.type === "password") {
 
-        confirmPasswordInput.type = "text";
-        toggleConfirmPassword.textContent = "🙈";
+        const confirmPasswordInput =
+            document.getElementById(
+                "confirmPassword"
+            );
 
-    } else {
 
-        confirmPasswordInput.type = "password";
-        toggleConfirmPassword.textContent = "👁️";
+        togglePassword.addEventListener(
+            "click",
+            function() {
 
-    }
-});
-        </script>
+                if (
+                    passwordInput.type ===
+                    "password"
+                ) {
+
+                    passwordInput.type =
+                        "text";
+
+                    togglePassword.textContent =
+                        "🙈";
+
+                }
+
+                else {
+
+                    passwordInput.type =
+                        "password";
+
+                    togglePassword.textContent =
+                        "👁️";
+
+                }
+
+            }
+        );
+
+
+        toggleConfirmPassword.addEventListener(
+            "click",
+            function() {
+
+                if (
+                    confirmPasswordInput.type ===
+                    "password"
+                ) {
+
+                    confirmPasswordInput.type =
+                        "text";
+
+                    toggleConfirmPassword.textContent =
+                        "🙈";
+
+                }
+
+                else {
+
+                    confirmPasswordInput.type =
+                        "password";
+
+                    toggleConfirmPassword.textContent =
+                        "👁️";
+
+                }
+
+            }
+        );
+
+    </script>
 
 </body>
 </html>

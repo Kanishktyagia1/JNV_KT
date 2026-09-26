@@ -484,7 +484,7 @@ async function loadRecentExams() {
         });
 
     } catch (error) {
-        console.error("Recent Exams Error:", error);
+        alert("ERROR: " + error.message);
 
         recentExams.innerHTML = `
             <p style="color:#dc2626;">

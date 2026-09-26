@@ -185,14 +185,21 @@
 
     </div>
 
-        <script>const loginForm = document.getElementById("loginForm");
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<script>
+const loginForm = document.getElementById("loginForm");
 const forgotPassword = document.getElementById("forgotPassword");
 
 
-loginForm.addEventListener("submit", function(event) {
+// =====================================
+// LOGIN
+// =====================================
+
+loginForm.addEventListener("submit", async function(event) {
 
     event.preventDefault();
-
 
     const teacherId =
         document.getElementById("teacherId").value.trim();
@@ -201,106 +208,293 @@ loginForm.addEventListener("submit", function(event) {
         document.getElementById("password").value;
 
 
-    // =========================
-    // 1. ADMIN LOGIN
-    // =========================
-
-    const account =
-        JSON.parse(localStorage.getItem("jnv_account"));
+    if (!teacherId || !password) {
+        alert("Please enter Teacher ID/Email and Password.");
+        return;
+    }
 
 
-    if (
-        account &&
-        teacherId === account.email &&
-        password === account.password
-    ) {
+    // =================================
+    // SUPABASE AUTH LOGIN
+    // =================================
 
-        localStorage.setItem("jnv_logged_in", "true");
+    let email = teacherId;
 
-        localStorage.setItem("jnv_user_role", "admin");
 
-        window.location.href = "main-dashboard.html";
+    // If Teacher ID is entered,
+    // find its Auth email from teachers table
+
+    if (!teacherId.includes("@")) {
+
+        const {
+            data: teacher,
+            error: teacherError
+        } = await db
+            .from("teachers")
+            .select(
+                "id, teacher_name, teacher_id, assigned_subject, auth_user_id"
+            )
+            .eq(
+                "teacher_id",
+                teacherId
+            )
+            .maybeSingle();
+
+
+        if (teacherError) {
+
+            console.error(teacherError);
+
+            alert(
+                "Teacher lookup failed:\n" +
+                teacherError.message
+            );
+
+            return;
+        }
+
+
+        if (!teacher) {
+
+            alert("Teacher ID not found.");
+            return;
+        }
+
+
+        if (!teacher.auth_user_id) {
+
+            alert(
+                "This teacher does not have a login account yet."
+            );
+
+            return;
+        }
+
+
+        // We need the email belonging to auth_user_id.
+        // Supabase client cannot directly read Auth email.
+        //
+        // So for now Teacher ID login requires
+        // the email to be entered.
+
+        alert(
+            "Please login using the email connected to this teacher account."
+        );
 
         return;
     }
 
 
-    // =========================
-    // 2. TEACHER LOGIN
-    // =========================
+    // =================================
+    // SIGN IN
+    // =================================
 
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
+    const {
+        data,
+        error
+    } = await db.auth.signInWithPassword({
 
+        email: email,
 
-    const teacher = teachers.find(function(t) {
-
-        return (
-            String(t.id).trim() === teacherId &&
-            t.password === password
-        );
+        password: password
 
     });
 
 
-    if (teacher) {
+    if (error) {
 
-        localStorage.setItem("jnv_logged_in", "true");
+        console.error(error);
 
-        localStorage.setItem("jnv_user_role", "teacher");
-
-        localStorage.setItem(
-            "jnv_logged_teacher",
-            JSON.stringify(teacher)
+        alert(
+            "Login failed:\n" +
+            error.message
         );
-
-
-        // Teacher ko uske assigned subject ke saath login karwao
-
-        window.location.href = "teacher-dashboard.html";
 
         return;
     }
 
 
-    // =========================
-    // WRONG LOGIN
-    // =========================
+    if (!data.user) {
 
-    alert("Wrong Teacher ID/Email ya Password.");
+        alert("Login failed. User not found.");
+
+        return;
+    }
+
+
+    // =================================
+    // FIND TEACHER RECORD
+    // =================================
+
+    const {
+        data: teacher,
+        error: teacherError
+    } = await db
+        .from("teachers")
+        .select(
+            "id, school_id, teacher_name, teacher_id, assigned_subject, auth_user_id"
+        )
+        .eq(
+            "auth_user_id",
+            data.user.id
+        )
+        .maybeSingle();
+
+
+    if (teacherError) {
+
+        console.error(teacherError);
+
+        alert(
+            "Teacher record lookup failed:\n" +
+            teacherError.message
+        );
+
+        await db.auth.signOut();
+
+        return;
+    }
+
+
+    if (!teacher) {
+
+        alert(
+            "Login successful, but teacher profile was not found."
+        );
+
+        await db.auth.signOut();
+
+        return;
+    }
+
+
+    // =================================
+    // SAVE LOGIN INFO
+    // =================================
+
+    localStorage.setItem(
+        "jnv_logged_in",
+        "true"
+    );
+
+    localStorage.setItem(
+        "jnv_user_role",
+        "teacher"
+    );
+
+    localStorage.setItem(
+        "jnv_logged_teacher",
+        JSON.stringify(teacher)
+    );
+
+
+    // =================================
+    // GO TO TEACHER DASHBOARD
+    // =================================
+
+    window.location.href =
+        "teacher-dashboard.html";
 
 });
 
 
-forgotPassword.addEventListener("click", function(event) {
+// =====================================
+// FORGOT PASSWORD
+// =====================================
 
-    event.preventDefault();
+forgotPassword.addEventListener(
+    "click",
+    async function(event) {
 
-    alert("Password recovery system baad mein banega.");
+        event.preventDefault();
 
-});
-          const togglePassword =
+
+        const email =
+            document
+                .getElementById("teacherId")
+                .value
+                .trim();
+
+
+        if (!email || !email.includes("@")) {
+
+            alert(
+                "Enter your email first, then click Forgot Password."
+            );
+
+            return;
+        }
+
+
+        const { error } =
+            await db.auth.resetPasswordForEmail(
+                email,
+                {
+                    redirectTo:
+                        window.location.origin +
+                        "/reset-password.html"
+                }
+            );
+
+
+        if (error) {
+
+            alert(
+                "Password reset failed:\n" +
+                error.message
+            );
+
+            return;
+        }
+
+
+        alert(
+            "Password reset link has been sent to your email."
+        );
+
+    }
+);
+
+
+// =====================================
+// SHOW / HIDE PASSWORD
+// =====================================
+
+const togglePassword =
     document.getElementById("togglePassword");
 
 const passwordInput =
     document.getElementById("password");
 
-togglePassword.addEventListener("click", function () {
 
-    if (passwordInput.type === "password") {
+togglePassword.addEventListener(
+    "click",
+    function() {
 
-        passwordInput.type = "text";
-        togglePassword.textContent = "🙈";
+        if (
+            passwordInput.type ===
+            "password"
+        ) {
 
-    } else {
+            passwordInput.type =
+                "text";
 
-        passwordInput.type = "password";
-        togglePassword.textContent = "👁️";
+            togglePassword.textContent =
+                "🙈";
+
+        } else {
+
+            passwordInput.type =
+                "password";
+
+            togglePassword.textContent =
+                "👁️";
+
+        }
 
     }
-
-});
-        </script>
+);
+</script>
 
 </body>
 </html>

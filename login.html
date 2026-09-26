@@ -196,40 +196,39 @@ loginForm.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
-    const teacherId =
+    const loginId =
         document.getElementById("teacherId").value.trim();
 
     const password =
         document.getElementById("password").value;
 
-    if (!teacherId || !password) {
-        alert("Please enter Teacher ID/Email and Password.");
+    if (!loginId || !password) {
+        alert("Please enter your login ID and password.");
         return;
     }
 
-    // Teacher ID → internal Auth email
-    let email = teacherId;
+    let email = loginId;
 
-    if (!teacherId.includes("@")) {
+    // Teacher ID → internal Auth email
+    if (!loginId.includes("@")) {
         email =
-            teacherId.toLowerCase() +
+            loginId.toLowerCase() +
             "@jnvresultmanager.local";
     }
 
-    // Supabase Auth login
-    const {
-        data,
-        error
-    } = await db.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
+    // Supabase Auth
+    const { data, error } =
+        await db.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
 
     if (error) {
-        console.error(error);
+
+        console.error("Login error:", error);
 
         alert(
-            "Login failed:\n" +
+            "Login failed:\n\n" +
             error.message
         );
 
@@ -237,11 +236,103 @@ loginForm.addEventListener("submit", async function(event) {
     }
 
     if (!data.user) {
-        alert("Login failed. User not found.");
+        alert("Login failed.");
         return;
     }
 
-    // Find teacher profile
+    // =====================================
+    // 1. CHECK ADMIN
+    // =====================================
+
+    const { data: school, error: schoolError } =
+        await db
+            .from("schools")
+            .select(`
+                id,
+                school_name,
+                school_address,
+                state,
+                district,
+                admin_name,
+                email,
+                mobile,
+                auth_user_id
+            `)
+            .eq("auth_user_id", data.user.id)
+            .maybeSingle();
+
+    if (schoolError) {
+
+        console.error("Admin lookup error:", schoolError);
+
+        await db.auth.signOut();
+
+        alert(
+            "Account verification failed.\n\n" +
+            schoolError.message
+        );
+
+        return;
+    }
+
+    // Admin found
+    if (school) {
+
+        localStorage.setItem(
+            "jnv_logged_in",
+            "true"
+        );
+
+        localStorage.setItem(
+            "jnv_user_role",
+            "admin"
+        );
+
+        localStorage.setItem(
+            "jnv_school_id",
+            school.id
+        );
+
+        localStorage.setItem(
+            "jnv_logged_school",
+            JSON.stringify(school)
+        );
+
+        // ---------------------------------
+        // Pending school signup
+        // ---------------------------------
+
+        const pendingSignup =
+            localStorage.getItem(
+                "pending_school_signup"
+            );
+
+        if (pendingSignup) {
+
+            console.log(
+                "Pending school information found."
+            );
+
+            /*
+             * IMPORTANT:
+             * Abhi school data ko directly
+             * database mein insert nahi karenge.
+             *
+             * Secure server API next step mein
+             * handle karegi.
+             */
+        }
+
+        window.location.href =
+            "main-dashboard.html";
+
+        return;
+    }
+
+    // =====================================
+    // 2. CHECK TEACHER
+    // =====================================
+
     const {
         data: teacher,
         error: teacherError
@@ -258,30 +349,33 @@ loginForm.addEventListener("submit", async function(event) {
 
     if (teacherError) {
 
-        console.error(teacherError);
-
-        alert(
-            "Teacher record lookup failed:\n" +
-            teacherError.message
+        console.error(
+            "Teacher lookup error:",
+            teacherError
         );
 
         await db.auth.signOut();
+
+        alert(
+            "Teacher profile lookup failed:\n\n" +
+            teacherError.message
+        );
 
         return;
     }
 
     if (!teacher) {
 
-        alert(
-            "Login successful, but teacher profile was not found."
-        );
-
         await db.auth.signOut();
+
+        alert(
+            "This account is not registered as an Admin or Teacher."
+        );
 
         return;
     }
 
-    // Save login info
+    // Teacher login
     localStorage.setItem(
         "jnv_logged_in",
         "true"
@@ -297,13 +391,15 @@ loginForm.addEventListener("submit", async function(event) {
         JSON.stringify(teacher)
     );
 
-    // Teacher dashboard
     window.location.href =
         "teacher-dashboard.html";
 });
 
 
-// Forgot Password
+// =====================================
+// FORGOT PASSWORD
+// =====================================
+
 forgotPassword.addEventListener(
     "click",
     async function(event) {
@@ -319,7 +415,7 @@ forgotPassword.addEventListener(
         if (!input) {
 
             alert(
-                "Enter your Teacher ID or email first."
+                "Enter your Admin Email or Teacher ID first."
             );
 
             return;
@@ -346,8 +442,13 @@ forgotPassword.addEventListener(
 
         if (error) {
 
+            console.error(
+                "Password reset error:",
+                error
+            );
+
             alert(
-                "Password reset failed:\n" +
+                "Password reset failed:\n\n" +
                 error.message
             );
 
@@ -355,13 +456,16 @@ forgotPassword.addEventListener(
         }
 
         alert(
-            "Password reset link has been sent."
+            "Password reset link has been sent to your email."
         );
     }
 );
 
 
-// Show / Hide Password
+// =====================================
+// SHOW / HIDE PASSWORD
+// =====================================
+
 const togglePassword =
     document.getElementById("togglePassword");
 

@@ -76,6 +76,13 @@ table{min-width:0}th,td{border:1px solid #000;padding:5px;font-size:10px}
 <div class="confirm-actions">
 <button type="button" class="cancel-btn" onclick="closeConfirm()">Cancel</button>
 <button type="button" class="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+  <button
+    class="open-result-btn"
+    id="publishBtn"
+    onclick="publishResult()"
+>
+    📢 Publish Result
+  </button>
 </div>
 </div>
 </div>
@@ -531,6 +538,31 @@ function updateSummary(){
         alert("Result save nahi hua: " + error.message);
     }
   }
+  async function publishResult() {
+
+    const confirmPublish = confirm(
+        "Are you sure you want to publish this result?"
+    );
+
+    if (!confirmPublish) return;
+
+    const { error } = await db
+        .from("exams")
+        .update({ published: true })
+        .eq("id", examId);
+
+    if (error) {
+        alert("Publish failed: " + error.message);
+        return;
+    }
+
+    alert("✅ Result published successfully!");
+
+    document.getElementById("publishBtn").textContent =
+        "✅ Result Published";
+
+    document.getElementById("publishBtn").disabled = true;
+      }
 async function loadSavedResult() {
     if (!exam?.id) return;
 

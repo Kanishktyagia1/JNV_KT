@@ -99,6 +99,31 @@ const examId = params.get("id") || params.get("examId");
 const schoolId = localStorage.getItem("jnv_school_id");
 
 let exam = null;
+  async function publishResult() {
+
+    const confirmPublish = confirm(
+        "Are you sure you want to publish this result?"
+    );
+
+    if (!confirmPublish) return;
+
+    const { error } = await db
+        .from("exams")
+        .update({ published: true })
+        .eq("id", examId);
+
+    if (error) {
+        alert("Publish failed: " + error.message);
+        return;
+    }
+
+    alert("✅ Result published successfully!");
+
+    const button = document.getElementById("publishBtn");
+
+    button.textContent = "✅ Result Published";
+    button.disabled = true;
+  }
 
 async function loadExam() {
     try {
@@ -539,31 +564,7 @@ function updateSummary(){
         alert("Result save nahi hua: " + error.message);
     }
   }
-  async function publishResult() {
-
-    const confirmPublish = confirm(
-        "Are you sure you want to publish this result?"
-    );
-
-    if (!confirmPublish) return;
-
-    const { error } = await db
-        .from("exams")
-        .update({ published: true })
-        .eq("id", examId);
-
-    if (error) {
-        alert("Publish failed: " + error.message);
-        return;
-    }
-
-    alert("✅ Result published successfully!");
-
-    document.getElementById("publishBtn").textContent =
-        "✅ Result Published";
-
-    document.getElementById("publishBtn").disabled = true;
-      }
+  
 async function loadSavedResult() {
     if (!exam?.id) return;
 

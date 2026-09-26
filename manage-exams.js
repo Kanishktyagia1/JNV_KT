@@ -3,87 +3,73 @@ const schoolId = localStorage.getItem("jnv_school_id");
 
 let exams = [];
 
-async function loadExam() {
+async function loadExams() {
+    examContainer.innerHTML = `
+        <div class="empty">
+            <h3>⏳ Loading Exams...</h3>
+        </div>
+    `;
+
     try {
-        if (!examId) {
-            throw new Error("URL mein exam ID nahi mili.");
-        }
-
         if (!schoolId) {
-            throw new Error("jnv_school_id nahi mila.");
+            throw new Error("School ID nahi mila. Please login again.");
         }
 
-        document.getElementById("examInfo").innerHTML =
-            "<b>1/5</b> Exam loading...";
-
-        const { data: examData, error: examError } = await db
+        // 1. Exams
+        const { data, error } = await db
             .from("exams")
             .select("*")
-            .eq("id", examId)
             .eq("school_id", schoolId)
-            .single();
+            .order("created_at", { ascending: false });
 
-        if (examError) {
-            throw new Error("EXAMS QUERY: " + examError.message);
+        if (error) throw error;
+
+        exams = data || [];
+
+        // 2. Har exam ki class + subjects separately load karo
+        for (const exam of exams) {
+
+            // Class
+            if (exam.class_id) {
+                const { data: classData, error: classError } = await db
+                    .from("classes")
+                    .select("class_name, section")
+                    .eq("id", exam.class_id)
+                    .maybeSingle();
+
+                if (classError) {
+                    console.error("Class error:", classError);
+                }
+
+                exam.classData = classData || {};
+            } else {
+                exam.classData = {};
+            }
+
+            // Subjects
+            const { data: subjectData, error: subjectError } = await db
+                .from("exam_subjects")
+                .select("subject_name")
+                .eq("exam_id", exam.id);
+
+            if (subjectError) {
+                console.error("Subject error:", subjectError);
+            }
+
+            exam.subjects = subjectData || [];
         }
 
-        document.getElementById("examInfo").innerHTML =
-            "<b>2/5</b> Exam OK. Loading class...";
-
-        const { data: classData, error: classError } = await db
-            .from("classes")
-            .select("class_name, section")
-            .eq("id", examData.class_id)
-            .single();
-
-        if (classError) {
-            throw new Error("CLASSES QUERY: " + classError.message);
-        }
-
-        document.getElementById("examInfo").innerHTML =
-            "<b>3/5</b> Class OK. Loading subjects...";
-
-        const { data: subjectData, error: subjectError } = await db
-            .from("exam_subjects")
-            .select("id, subject_name, max_marks")
-            .eq("exam_id", examId);
-
-        if (subjectError) {
-            throw new Error("SUBJECTS QUERY: " + subjectError.message);
-        }
-
-        document.getElementById("examInfo").innerHTML =
-            "<b>4/5</b> Subjects OK. Loading students...";
-
-        const { data: examStudents, error: studentError } = await db
-            .from("exam_students")
-            .select("id, student_id, roll_number_snapshot, student_name_snapshot")
-            .eq("exam_id", examId);
-
-        if (studentError) {
-            throw new Error("EXAM STUDENTS QUERY: " + studentError.message);
-        }
-
-        document.getElementById("examInfo").innerHTML = `
-            <h2>✅ All queries working</h2>
-            <p>Exam: ${examData.exam_name}</p>
-            <p>Class: ${classData.class_name} - ${classData.section}</p>
-            <p>Subjects: ${subjectData.length}</p>
-            <p>Students: ${examStudents.length}</p>
-        `;
+        displayExams();
 
     } catch (error) {
+        console.error("MANAGE EXAMS ERROR:", error);
 
-        console.error("RESULT FILE ERROR:", error);
-
-        document.getElementById("examInfo").innerHTML = `
-            <div class="not-found">
-                <h2>❌ Exact Error Found</h2>
-                <p>${escapeHtml(error.message)}</p>
+        examContainer.innerHTML = `
+            <div class="empty">
+                <h3>❌ Exams Load Nahi Hue</h3>
+                <p>${escapeHtml(error.message || String(error))}</p>
             </div>
         `;
-
-        document.getElementById("tableBox").innerHTML = "";
     }
 }
 

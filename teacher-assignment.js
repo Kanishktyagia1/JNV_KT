@@ -167,9 +167,7 @@ async function showTeachers() {
 
     teacherList.innerHTML = "";
 
-    const schoolId =
-        localStorage.getItem("jnv_school_id");
-  console.log("School ID:", schoolId);
+    const schoolId = "5db2de69-1100-4d34-acf5-5f64546cd1f3";
 
     const { data: teachers, error } = await db
         .from("teachers")

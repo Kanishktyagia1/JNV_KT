@@ -432,67 +432,73 @@
     <script>
         const recentExams = document.getElementById("recentExams");
 
-        const exams = JSON.parse(
-            localStorage.getItem("jnv_exams")
-        ) || [];
+async function loadRecentExams() {
+    try {
+        const schoolId = localStorage.getItem("jnv_school_id");
 
-        if (exams.length > 0) {
+        if (!schoolId) {
+            throw new Error("School ID nahi mila.");
+        }
 
-            recentExams.innerHTML = "";
+        const { data: exams, error } = await db
+            .from("exams")
+            .select("id, exam_name, class_id, created_at")
+            .eq("school_id", schoolId)
+            .order("created_at", { ascending: false })
+            .limit(5);
 
-            exams.slice().reverse().forEach(function(exam) {
+        if (error) throw error;
 
-                const examItem = document.createElement("div");
-                examItem.className = "exam-item";
-
-                examItem.innerHTML = `
-                    <div>
-                        <h3>${exam.examName}</h3>
-
-                        <p>
-                            Class ${exam.className}-${exam.section}
-                            • ${exam.studentCount} Students
-                        </p>
-
-                        <p>
-                            Subjects: ${exam.subjects.join(", ")}
-                        </p>
-
-                        <button
-                            class="open-result-btn"
-                            onclick="openResultFile(${exam.id})"
-                        >
-                            Open Result File →
-                        </button>
-                    </div>
-
-                    <span class="status">Created</span>
-                `;
-
-                recentExams.appendChild(examItem);
-            });
-
-        } else {
-
+        if (!exams || exams.length === 0) {
             recentExams.innerHTML = `
                 <p style="color: #64748b;">
                     Abhi koi exam create nahi hua.
                 </p>
             `;
+            return;
         }
 
-        function openResultFile(examId) {
-            window.location.href = "result-file.html?id=" + examId;
-        }
+        recentExams.innerHTML = "";
 
-        document.getElementById("logoutBtn").addEventListener("click", function(event) {
-            event.preventDefault();
+        exams.forEach(function(exam) {
 
-            localStorage.removeItem("jnv_logged_in");
-            localStorage.removeItem("jnv_user_role");
+            const examItem = document.createElement("div");
+            examItem.className = "exam-item";
 
-            window.location.href = "login.html";
+            examItem.innerHTML = `
+                <div>
+                    <h3>${exam.exam_name}</h3>
+
+                    <button
+                        class="open-result-btn"
+                        onclick="openResultFile('${exam.id}')"
+                    >
+                        Open Result File →
+                    </button>
+                </div>
+
+                <span class="status">Created</span>
+            `;
+
+            recentExams.appendChild(examItem);
         });
+
+    } catch (error) {
+        console.error("Recent Exams Error:", error);
+
+        recentExams.innerHTML = `
+            <p style="color:#dc2626;">
+                Exams load nahi ho paaye.
+            </p>
+        `;
+    }
+}
+
+function openResultFile(examId) {
+    window.location.href = "result-file.html?id=" + examId;
+}
+
+loadRecentExams();
     </script>
 
 </body>

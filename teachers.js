@@ -15,6 +15,9 @@ saveTeacher.addEventListener("click", async function () {
     const teacherSubject =
         document.getElementById("teacherSubject").value;
 
+    const schoolId =
+        localStorage.getItem("jnv_school_id");
+
     if (
         teacherName === "" ||
         teacherId === "" ||
@@ -25,10 +28,16 @@ saveTeacher.addEventListener("click", async function () {
         return;
     }
 
+    if (!schoolId) {
+        alert("School ID nahi mila.");
+        return;
+    }
+
     const { data: existingTeacher, error: checkError } = await db
         .from("teachers")
         .select("id")
         .eq("teacher_id", teacherId)
+        .eq("school_id", schoolId)
         .maybeSingle();
 
     if (checkError) {
@@ -44,10 +53,10 @@ saveTeacher.addEventListener("click", async function () {
     const { error } = await db
         .from("teachers")
         .insert({
+            school_id: schoolId,
             teacher_name: teacherName,
             teacher_id: teacherId,
-            password: teacherPassword,
-            subject: teacherSubject
+            assigned_subject: teacherSubject
         });
 
     if (error) {
@@ -69,9 +78,13 @@ saveTeacher.addEventListener("click", async function () {
 
 async function showTeachers() {
 
+    const schoolId =
+        localStorage.getItem("jnv_school_id");
+
     const { data: teachers, error } = await db
         .from("teachers")
-        .select("id, teacher_name, teacher_id, subject")
+        .select("id, teacher_name, teacher_id, assigned_subject")
+        .eq("school_id", schoolId)
         .order("teacher_name");
 
     if (error) {
@@ -92,12 +105,9 @@ async function showTeachers() {
     teachers.forEach(function (teacher) {
 
         teacherList.innerHTML += `
-
             <div class="teacher-item">
 
-                <h3>
-                    ${teacher.teacher_name}
-                </h3>
+                <h3>${teacher.teacher_name}</h3>
 
                 <p>
                     <strong>Teacher ID:</strong>
@@ -106,7 +116,7 @@ async function showTeachers() {
 
                 <p>
                     <strong>Subject:</strong>
-                    ${teacher.subject || "Not Assigned"}
+                    ${teacher.assigned_subject || "Not Assigned"}
                 </p>
 
                 <button
@@ -117,7 +127,6 @@ async function showTeachers() {
                 </button>
 
             </div>
-
         `;
     });
 }
@@ -128,9 +137,7 @@ async function deleteTeacher(id) {
     const confirmDelete =
         confirm("Are you sure you want to delete this teacher?");
 
-    if (!confirmDelete) {
-        return;
-    }
+    if (!confirmDelete) return;
 
     const { error } = await db
         .from("teachers")

@@ -35,12 +35,13 @@ async function loadExams() {
     .eq("school_id", schoolId);
 
     if (error) {
-        console.error(error);
+    alert("Exam load error: " + error.message);
+    console.error(error);
 
-        examSelect.innerHTML =
-            `<option value="">Failed to load exams</option>`;
+    examSelect.innerHTML =
+        `<option value="">Exam load failed</option>`;
 
-        return;
+    return;
     }
 
     examSelect.innerHTML =

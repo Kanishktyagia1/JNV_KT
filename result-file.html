@@ -169,21 +169,106 @@ async function loadExam() {
 
         console.error("RESULT FILE ERROR:", error);
 
+        document.getElementByIdasync function loadExam() {
+    try {
+        if (!examId) {
+            throw new Error("URL mein exam ID nahi mili.");
+        }
+
+        if (!schoolId) {
+            throw new Error("jnv_school_id nahi mila.");
+        }
+
+        const { data: examData, error: examError } = await db
+            .from("exams")
+            .select("*")
+            .eq("id", examId)
+            .eq("school_id", schoolId)
+            .single();
+
+        if (examError) throw examError;
+
+        const { data: schoolData } = await db
+            .from("schools")
+            .select("school_name, school_address, state, district")
+            .eq("id", schoolId)
+            .single();
+
+        const { data: classData, error: classError } = await db
+            .from("classes")
+            .select("class_name, section")
+            .eq("id", examData.class_id)
+            .single();
+
+        if (classError) throw classError;
+
+        const { data: subjectData, error: subjectError } = await db
+            .from("exam_subjects")
+            .select("id, subject_name, max_marks")
+            .eq("exam_id", examId)
+            .order("created_at", { ascending: true });
+
+        if (subjectError) throw subjectError;
+
+        const { data: examStudents, error: studentError } = await db
+            .from("exam_students")
+            .select(
+                "id, student_id, roll_number_snapshot, student_name_snapshot"
+            )
+            .eq("exam_id", examId)
+            .order("roll_number_snapshot", { ascending: true });
+
+        if (studentError) throw studentError;
+
+        exam = {
+            id: examData.id,
+
+            schoolName: schoolData?.school_name || "",
+            schoolAddress: schoolData?.school_address || "",
+            state: schoolData?.state || "",
+            district: schoolData?.district || "",
+
+            examName: examData.exam_name || "",
+            examYear: examData.exam_year || "",
+
+            className: classData?.class_name || "",
+            section: classData?.section || "",
+
+            maxMarks: Number(examData.max_marks || 0),
+
+            subjects: (subjectData || []).map(
+                s => s.subject_name
+            ),
+
+            subjectDetails: subjectData || [],
+
+            students: (examStudents || []).map(s => ({
+                id: s.id,
+                studentId: s.student_id,
+                rollNumber: s.roll_number_snapshot || "",
+                studentName: s.student_name_snapshot || ""
+            }))
+        };
+
+        console.log("FINAL EXAM OBJECT:", exam);
+
+        // 🔥 Ab actual page render hogi
+        renderExam();
+
+    } catch (error) {
+
+        console.error("RESULT FILE ERROR:", error);
+
         document.getElementById("examInfo").innerHTML = `
             <div class="not-found">
-                <h2>❌ Exact Error Found</h2>
-                <p>${escapeHtml(error.message || String(error))}</p>
+                <h2>❌ Error</h2>
+                <p>${escapeHtml(error.message)}</p>
             </div>
         `;
 
         document.getElementById("tableBox").innerHTML = "";
     }
-}
-
-const examInfo = document.getElementById("examInfo");
-const tableBox = document.getElementById("tableBox");
-
-let rowToDelete = null;
+  }
 function renderExam() {
 if (!exam) {
     examInfo.innerHTML = `

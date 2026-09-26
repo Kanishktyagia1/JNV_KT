@@ -12,6 +12,7 @@ teacherSubject.addEventListener("change", function () {
     }
 });
 
+
 saveTeacher.addEventListener("click", async function () {
 
     const teacherName =
@@ -24,14 +25,15 @@ saveTeacher.addEventListener("click", async function () {
         document.getElementById("teacherPassword").value;
 
     let teacherSubject =
-    document.getElementById("teacherSubject").value;
+        document.getElementById("teacherSubject").value;
 
-if (teacherSubject === "Custom") {
-    teacherSubject = customSubject.value.trim();
-}
+    if (teacherSubject === "Custom") {
+        teacherSubject = customSubject.value.trim();
+    }
 
     const schoolId =
         localStorage.getItem("jnv_school_id");
+
 
     if (
         teacherName === "" ||
@@ -48,46 +50,64 @@ if (teacherSubject === "Custom") {
         return;
     }
 
-    const { data: existingTeacher, error: checkError } = await db
-        .from("teachers")
-        .select("id")
-        .eq("teacher_id", teacherId)
-        .eq("school_id", schoolId)
-        .maybeSingle();
 
-    if (checkError) {
-        alert("Error checking Teacher ID: " + checkError.message);
-        return;
-    }
+    // 🔐 Create teacher through secure Vercel API
+    try {
 
-    if (existingTeacher) {
-        alert("This Teacher ID already exists.");
-        return;
-    }
+        const response = await fetch("/api/create-teacher", {
+            method: "POST",
 
-    const { error } = await db
-        .from("teachers")
-        .insert({
-            school_id: schoolId,
-            teacher_name: teacherName,
-            teacher_id: teacherId,
-            assigned_subject: teacherSubject
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                teacherName: teacherName,
+                teacherId: teacherId,
+                password: teacherPassword,
+                assignedSubject: teacherSubject,
+                schoolId: schoolId
+            })
         });
 
-    if (error) {
-        alert("Teacher save failed: " + error.message);
-        console.error(error);
-        return;
+
+        const result = await response.json();
+
+
+        if (!response.ok) {
+            alert(
+                "Teacher creation failed: " +
+                (result.error || "Unknown error")
+            );
+            return;
+        }
+
+
+        alert("Teacher account created successfully!");
+
+
+        // Clear form
+        document.getElementById("teacherName").value = "";
+        document.getElementById("teacherId").value = "";
+        document.getElementById("teacherPassword").value = "";
+        document.getElementById("teacherSubject").value = "";
+
+        customSubject.style.display = "none";
+        customSubject.value = "";
+
+
+        showTeachers();
+
+
+    } catch (error) {
+
+        console.error("Create teacher error:", error);
+
+        alert(
+            "Server se connection nahi ho paaya. Please try again."
+        );
     }
 
-    alert("Teacher account saved successfully!");
-
-    document.getElementById("teacherName").value = "";
-    document.getElementById("teacherId").value = "";
-    document.getElementById("teacherPassword").value = "";
-    document.getElementById("teacherSubject").value = "";
-
-    showTeachers();
 });
 
 
@@ -102,20 +122,29 @@ async function showTeachers() {
         .eq("school_id", schoolId)
         .order("teacher_name");
 
+
     if (error) {
+
         console.error("Teachers load error:", error);
+
         teacherList.innerHTML =
             `<p class="empty">Teachers load nahi ho paaye.</p>`;
+
         return;
     }
+
 
     if (!teachers || teachers.length === 0) {
+
         teacherList.innerHTML =
             `<p class="empty">No teachers added yet.</p>`;
+
         return;
     }
 
+
     teacherList.innerHTML = "";
+
 
     teachers.forEach(function (teacher) {
 
@@ -154,15 +183,20 @@ async function deleteTeacher(id) {
 
     if (!confirmDelete) return;
 
+
     const { error } = await db
         .from("teachers")
         .delete()
         .eq("id", id);
 
+
     if (error) {
+
         alert("Teacher delete failed: " + error.message);
+
         return;
     }
+
 
     showTeachers();
 }

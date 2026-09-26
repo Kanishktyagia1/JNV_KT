@@ -622,7 +622,9 @@ function updateSummary(){
     });
 
     const percentages=appeared.map(s=>s.percentage);
-    const overallPass=percentages.filter(p=>p>=33).length;
+    const overallPass = appeared.filter(
+    s => s.result === "Pass"
+).length;
     const overallPassPct=percentages.length?(overallPass/percentages.length*100).toFixed(1)+"%":"0%";
 
     fillSummaryRow("summaryTotalRow","TOTAL",subjectStats.map(s=>s.total),"");

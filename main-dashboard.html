@@ -513,12 +513,10 @@ async function loadRecentExams() {
 
 loadTotalExams();
       async function loadTotalStudents() {
-    const schoolId = localStorage.getItem("jnv_school_id");
 
     const { count, error } = await db
         .from("students")
-        .select("*", { count: "exact", head: true })
-        .eq("school_id", schoolId);
+        .select("*", { count: "exact", head: true });
 
     if (error) {
         console.error("Total Students Error:", error);

@@ -18,15 +18,36 @@ let currentSubject = "";
 // LOAD EXAMS
 // ===============================
 
-function loadExams() {
+async function loadExams() {
 
-    const exams =
-        JSON.parse(localStorage.getItem("jnv_exams")) || [];
+    const schoolId =
+        localStorage.getItem("jnv_school_id");
+
+    if (!schoolId) {
+        examSelect.innerHTML =
+            `<option value="">School ID not found</option>`;
+        return;
+    }
+
+    const { data: exams, error } = await db
+        .from("exams")
+        .select("id, exam_name, class_id")
+        .eq("school_id", schoolId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error(error);
+
+        examSelect.innerHTML =
+            `<option value="">Failed to load exams</option>`;
+
+        return;
+    }
 
     examSelect.innerHTML =
         `<option value="">-- Select Exam --</option>`;
 
-    if (exams.length === 0) {
+    if (!exams || exams.length === 0) {
         examSelect.innerHTML +=
             `<option value="">No exams created yet</option>`;
         return;
@@ -36,7 +57,7 @@ function loadExams() {
 
         examSelect.innerHTML += `
             <option value="${exam.id}">
-                ${exam.examName} - ${exam.className} ${exam.section}
+                ${exam.exam_name}
             </option>
         `;
     });
@@ -47,7 +68,7 @@ function loadExams() {
 // EXAM SELECT
 // ===============================
 
-examSelect.addEventListener("change", function () {
+examSelect.addEventListener("change", async function () {
 
     const examId = this.value;
 
@@ -58,22 +79,16 @@ examSelect.addEventListener("change", function () {
 
     if (examId === "") {
         selectedExam = null;
+        showAssignments();
         return;
     }
 
-    const exams =
-        JSON.parse(localStorage.getItem("jnv_exams")) || [];
+    selectedExam = {
+        id: examId
+    };
 
-    selectedExam = exams.find(
-        exam => String(exam.id) === String(examId)
-    );
-
-    if (!selectedExam) {
-        return;
-    }
-
-    showSubjects();
-    showAssignments();
+    await showSubjects();
+    await showAssignments();
 });
 
 
@@ -81,12 +96,26 @@ examSelect.addEventListener("change", function () {
 // SHOW SUBJECTS
 // ===============================
 
-function showSubjects() {
+async function showSubjects() {
 
     subjectList.innerHTML = "";
 
-    if (!selectedExam.subjects ||
-        selectedExam.subjects.length === 0) {
+    const { data: subjects, error } = await db
+        .from("exam_subjects")
+        .select("id, subject")
+        .eq("exam_id", selectedExam.id);
+
+    if (error) {
+        console.error(error);
+
+        subjectList.innerHTML =
+            `<p class="message">Subjects load nahi ho paaye.</p>`;
+
+        subjectCard.style.display = "block";
+        return;
+    }
+
+    if (!subjects || subjects.length === 0) {
 
         subjectList.innerHTML =
             `<p class="message">No subjects found in this exam.</p>`;
@@ -95,16 +124,9 @@ function showSubjects() {
         return;
     }
 
-    selectedExam.subjects.forEach(function (subject) {
+    subjects.forEach(function (subject) {
 
-        // Supports both:
-        // "Physics"
-        // { name: "Physics" }
-
-        const subjectName =
-            typeof subject === "string"
-                ? subject
-                : subject.name;
+        const subjectName = subject.subject;
 
         const button =
             document.createElement("button");
@@ -112,11 +134,13 @@ function showSubjects() {
         button.className = "subject-btn";
         button.textContent = subjectName;
 
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
 
             document
                 .querySelectorAll(".subject-btn")
-                .forEach(btn => btn.classList.remove("active"));
+                .forEach(btn =>
+                    btn.classList.remove("active")
+                );
 
             button.classList.add("active");
 
@@ -125,7 +149,7 @@ function showSubjects() {
             selectedSubject.textContent =
                 subjectName;
 
-            showTeachers();
+            await showTeachers();
         });
 
         subjectList.appendChild(button);
@@ -139,14 +163,30 @@ function showSubjects() {
 // SHOW TEACHERS
 // ===============================
 
-function showTeachers() {
-
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
+async function showTeachers() {
 
     teacherList.innerHTML = "";
 
-    if (teachers.length === 0) {
+    const schoolId =
+        localStorage.getItem("jnv_school_id");
+
+    const { data: teachers, error } = await db
+        .from("teachers")
+        .select("id, teacher_name, teacher_id, assigned_subject")
+        .eq("school_id", schoolId)
+        .order("teacher_name");
+
+    if (error) {
+        console.error(error);
+
+        teacherList.innerHTML =
+            `<p class="message">Teachers load nahi ho paaye.</p>`;
+
+        teacherCard.style.display = "block";
+        return;
+    }
+
+    if (!teachers || teachers.length === 0) {
 
         teacherList.innerHTML =
             `<p class="message">
@@ -158,14 +198,15 @@ function showTeachers() {
     }
 
 
-    // Show teachers whose assigned subject
-    // matches the selected subject.
-
     const matchingTeachers = teachers.filter(
         teacher =>
-            String(teacher.subject).trim().toLowerCase()
+            String(teacher.assigned_subject || "")
+                .trim()
+                .toLowerCase()
             ===
-            String(currentSubject).trim().toLowerCase()
+            String(currentSubject)
+                .trim()
+                .toLowerCase()
     );
 
 
@@ -194,10 +235,10 @@ function showTeachers() {
 
                 <div class="teacher-info">
 
-                    <strong>${teacher.name}</strong>
+                    <strong>${teacher.teacher_name}</strong>
 
                     <span>
-                        Teacher ID: ${teacher.id}
+                        Teacher ID: ${teacher.teacher_id}
                     </span>
 
                 </div>
@@ -215,19 +256,17 @@ function showTeachers() {
 // ASSIGN TEACHERS
 // ===============================
 
-assignTeachers.addEventListener("click", function () {
+assignTeachers.addEventListener("click", async function () {
 
     if (!selectedExam || !currentSubject) {
         alert("Please select Exam and Subject first.");
         return;
     }
 
-
     const selectedCheckboxes =
         document.querySelectorAll(
             ".teacher-checkbox:checked"
         );
-
 
     if (selectedCheckboxes.length === 0) {
         alert("Please select at least one teacher.");
@@ -235,70 +274,72 @@ assignTeachers.addEventListener("click", function () {
     }
 
 
-    const assignments =
-        JSON.parse(
-            localStorage.getItem("jnv_teacher_assignments")
-        ) || [];
-
-
     let added = 0;
+    let alreadyAssigned = 0;
 
 
-    selectedCheckboxes.forEach(function (checkbox) {
+    for (const checkbox of selectedCheckboxes) {
 
         const teacherId = checkbox.value;
 
 
-        // Same teacher + same exam + same subject
-        // cannot be assigned twice.
-
-        const alreadyAssigned =
-            assignments.some(assignment =>
-                String(assignment.teacherId) === String(teacherId) &&
-                String(assignment.examId) === String(selectedExam.id) &&
-                String(assignment.subject).toLowerCase() ===
-                String(currentSubject).toLowerCase()
-            );
+        const { data: existingAssignment, error: checkError } =
+            await db
+                .from("teacher_assignments")
+                .select("id")
+                .eq("exam_id", selectedExam.id)
+                .eq("teacher_id", teacherId)
+                .eq("subject", currentSubject)
+                .maybeSingle();
 
 
-        if (!alreadyAssigned) {
+        if (checkError) {
+            console.error(checkError);
+            continue;
+        }
 
-            assignments.push({
 
-                id: Date.now() + Math.random(),
+        if (existingAssignment) {
+            alreadyAssigned++;
+            continue;
+        }
 
-                teacherId: teacherId,
 
-                examId: selectedExam.id,
-
+        const { error } = await db
+            .from("teacher_assignments")
+            .insert({
+                exam_id: selectedExam.id,
+                teacher_id: teacherId,
                 subject: currentSubject
-
             });
 
-            added++;
+
+        if (error) {
+            console.error(error);
+            continue;
         }
-    });
+
+        added++;
+    }
 
 
-    localStorage.setItem(
-        "jnv_teacher_assignments",
-        JSON.stringify(assignments)
-    );
+    if (added === 0 && alreadyAssigned > 0) {
 
-
-    if (added === 0) {
         alert("Selected teachers are already assigned.");
-    } else {
+
+    } else if (added > 0) {
+
         alert(
             added +
             " teacher assignment(s) saved successfully!"
         );
+
     }
 
 
-    showAssignments();
+    await showAssignments();
 
-    // Uncheck boxes
+
     document
         .querySelectorAll(".teacher-checkbox")
         .forEach(box => box.checked = false);
@@ -309,37 +350,40 @@ assignTeachers.addEventListener("click", function () {
 // SHOW CURRENT ASSIGNMENTS
 // ===============================
 
-function showAssignments() {
+async function showAssignments() {
 
     if (!selectedExam) {
+
         assignmentList.innerHTML =
             `<p class="message">
                 Select an exam to see assignments.
             </p>`;
+
         return;
     }
 
 
-    const assignments =
-        JSON.parse(
-            localStorage.getItem("jnv_teacher_assignments")
-        ) || [];
-
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers"))
-        || [];
+    const { data: assignments, error } = await db
+        .from("teacher_assignments")
+        .select("id, teacher_id, subject")
+        .eq("exam_id", selectedExam.id)
+        .order("created_at");
 
 
-    const examAssignments =
-        assignments.filter(
-            assignment =>
-                String(assignment.examId)
-                ===
-                String(selectedExam.id)
-        );
+    if (error) {
+
+        console.error(error);
+
+        assignmentList.innerHTML =
+            `<p class="message">
+                Assignments load nahi ho paaye.
+            </p>`;
+
+        return;
+    }
 
 
-    if (examAssignments.length === 0) {
+    if (!assignments || assignments.length === 0) {
 
         assignmentList.innerHTML =
             `<p class="message">
@@ -350,24 +394,48 @@ function showAssignments() {
     }
 
 
+    // Get teacher details
+
+    const teacherIds =
+        [...new Set(assignments.map(a => a.teacher_id))];
+
+
+    const { data: teachers, error: teacherError } =
+        await db
+            .from("teachers")
+            .select("id, teacher_name, teacher_id")
+            .in("id", teacherIds);
+
+
+    if (teacherError) {
+        console.error(teacherError);
+    }
+
+
     assignmentList.innerHTML = "";
 
 
-    examAssignments.forEach(function (assignment) {
+    assignments.forEach(function (assignment) {
 
         const teacher =
-            teachers.find(
+            (teachers || []).find(
                 t =>
                     String(t.id)
                     ===
-                    String(assignment.teacherId)
+                    String(assignment.teacher_id)
             );
 
 
         const teacherName =
             teacher
-                ? teacher.name
+                ? teacher.teacher_name
                 : "Unknown Teacher";
+
+
+        const teacherId =
+            teacher
+                ? teacher.teacher_id
+                : assignment.teacher_id;
 
 
         assignmentList.innerHTML += `
@@ -383,7 +451,7 @@ function showAssignments() {
                 </p>
 
                 <p>
-                    Teacher ID: ${assignment.teacherId}
+                    Teacher ID: ${teacherId}
                 </p>
 
                 <button
@@ -404,7 +472,7 @@ function showAssignments() {
 // DELETE ASSIGNMENT
 // ===============================
 
-function deleteAssignment(id) {
+async function deleteAssignment(id) {
 
     const confirmDelete =
         confirm(
@@ -416,26 +484,24 @@ function deleteAssignment(id) {
     }
 
 
-    let assignments =
-        JSON.parse(
-            localStorage.getItem("jnv_teacher_assignments")
-        ) || [];
+    const { error } = await db
+        .from("teacher_assignments")
+        .delete()
+        .eq("id", id);
 
 
-    assignments =
-        assignments.filter(
-            assignment =>
-                String(assignment.id) !== String(id)
+    if (error) {
+
+        alert(
+            "Assignment delete failed: "
+            + error.message
         );
 
-
-    localStorage.setItem(
-        "jnv_teacher_assignments",
-        JSON.stringify(assignments)
-    );
+        return;
+    }
 
 
-    showAssignments();
+    await showAssignments();
 }
 
 

@@ -65,7 +65,8 @@ resultMessage.textContent =
     const saveMarks =
         document.getElementById("saveMarks");
 
-
+resultMessage.textContent =
+    "JavaScript loaded. Checking exam...";
     // ===============================
     // LOGIN CHECK
     // ===============================

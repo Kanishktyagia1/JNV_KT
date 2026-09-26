@@ -1,39 +1,29 @@
 const examSelect = document.getElementById("examSelect");
 
-const SUPABASE_URL =
-    "https://pzvnavadhgqfceaypjqb.supabase.co";
+alert("JS STARTED");
 
-const SUPABASE_KEY =
-    "sb_publishable_6HEYEQUPZ9aho1jcY1sLoQ_50aRqNsV";
+async function testExams() {
 
-const testDb = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+    alert("QUERY STARTING");
 
-
-async function loadExams() {
-
-    examSelect.innerHTML =
-        `<option value="">Loading exams...</option>`;
-
-    const { data, error } = await testDb
+    const { data, error } = await db
         .from("exams")
         .select("id, exam_name");
 
     if (error) {
 
         alert(
-            "ERROR:\n" +
+            "SUPABASE ERROR:\n" +
             error.message
         );
-
-        console.error(error);
 
         return;
     }
 
-    console.log(data);
+    alert(
+        "EXAMS FOUND: " +
+        data.length
+    );
 
     examSelect.innerHTML =
         `<option value="">-- Select Exam --</option>`;
@@ -45,9 +35,8 @@ async function loadExams() {
                 ${exam.exam_name}
             </option>
         `;
-    });
 
+    });
 }
 
-
-loadExams();
+testExams();

@@ -1,8 +1,7 @@
 const saveTeacher = document.getElementById("saveTeacher");
 const teacherList = document.getElementById("teacherList");
 
-
-saveTeacher.addEventListener("click", function () {
+saveTeacher.addEventListener("click", async function () {
 
     const teacherName =
         document.getElementById("teacherName").value.trim();
@@ -16,123 +15,93 @@ saveTeacher.addEventListener("click", function () {
     const teacherSubject =
         document.getElementById("teacherSubject").value;
 
-
-    // Check empty fields
-
     if (
         teacherName === "" ||
         teacherId === "" ||
         teacherPassword === "" ||
         teacherSubject === ""
     ) {
-
         alert("Please fill all fields.");
-
         return;
     }
 
+    const { data: existingTeacher, error: checkError } = await db
+        .from("teachers")
+        .select("id")
+        .eq("teacher_id", teacherId)
+        .maybeSingle();
 
-    // Get existing teachers
+    if (checkError) {
+        alert("Error checking Teacher ID: " + checkError.message);
+        return;
+    }
 
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
-
-
-    // Check duplicate Teacher ID
-
-    const alreadyExists = teachers.some(
-        teacher => teacher.id === teacherId
-    );
-
-
-    if (alreadyExists) {
-
+    if (existingTeacher) {
         alert("This Teacher ID already exists.");
-
         return;
     }
 
+    const { error } = await db
+        .from("teachers")
+        .insert({
+            teacher_name: teacherName,
+            teacher_id: teacherId,
+            password: teacherPassword,
+            subject: teacherSubject
+        });
 
-    // Create teacher object
-
-    const teacher = {
-
-        name: teacherName,
-
-        id: teacherId,
-
-        password: teacherPassword,
-
-        subject: teacherSubject
-
-    };
-
-
-    // Add teacher
-
-    teachers.push(teacher);
-
-
-    // Save teachers
-
-    localStorage.setItem(
-        "jnv_teachers",
-        JSON.stringify(teachers)
-    );
-
+    if (error) {
+        alert("Teacher save failed: " + error.message);
+        console.error(error);
+        return;
+    }
 
     alert("Teacher account saved successfully!");
 
-
-    // Clear form
-
     document.getElementById("teacherName").value = "";
-
     document.getElementById("teacherId").value = "";
-
     document.getElementById("teacherPassword").value = "";
-
     document.getElementById("teacherSubject").value = "";
 
-
-    // Refresh list
-
     showTeachers();
-
 });
 
 
-function showTeachers() {
+async function showTeachers() {
 
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
+    const { data: teachers, error } = await db
+        .from("teachers")
+        .select("id, teacher_name, teacher_id, subject")
+        .order("teacher_name");
 
-
-    if (teachers.length === 0) {
-
+    if (error) {
+        console.error("Teachers load error:", error);
         teacherList.innerHTML =
-            `<p class="empty">No teachers added yet.</p>`;
-
+            `<p class="empty">Teachers load nahi ho paaye.</p>`;
         return;
     }
 
+    if (!teachers || teachers.length === 0) {
+        teacherList.innerHTML =
+            `<p class="empty">No teachers added yet.</p>`;
+        return;
+    }
 
     teacherList.innerHTML = "";
 
-
-    teachers.forEach(function (teacher, index) {
+    teachers.forEach(function (teacher) {
 
         teacherList.innerHTML += `
 
             <div class="teacher-item">
 
                 <h3>
-                    ${teacher.name}
+                    ${teacher.teacher_name}
                 </h3>
 
                 <p>
                     <strong>Teacher ID:</strong>
-                    ${teacher.id}
+                    ${teacher.teacher_id}
                 </p>
 
                 <p>
@@ -142,7 +111,7 @@ function showTeachers() {
 
                 <button
                     class="delete-btn"
-                    onclick="deleteTeacher(${index})"
+                    onclick="deleteTeacher('${teacher.id}')"
                 >
                     🗑️ Delete
                 </button>
@@ -151,36 +120,29 @@ function showTeachers() {
 
         `;
     });
-
 }
 
 
-function deleteTeacher(index) {
-
-    const teachers =
-        JSON.parse(localStorage.getItem("jnv_teachers")) || [];
-
+async function deleteTeacher(id) {
 
     const confirmDelete =
         confirm("Are you sure you want to delete this teacher?");
-
 
     if (!confirmDelete) {
         return;
     }
 
+    const { error } = await db
+        .from("teachers")
+        .delete()
+        .eq("id", id);
 
-    teachers.splice(index, 1);
-
-
-    localStorage.setItem(
-        "jnv_teachers",
-        JSON.stringify(teachers)
-    );
-
+    if (error) {
+        alert("Teacher delete failed: " + error.message);
+        return;
+    }
 
     showTeachers();
-
 }
 
 

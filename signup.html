@@ -332,93 +332,92 @@ const signupForm = document.getElementById("signupForm");
 signupForm.addEventListener("submit", async function(event) {
     event.preventDefault();
 
-    const password =
-        document.getElementById("password").value;
-
-    const confirmPassword =
-        document.getElementById("confirmPassword").value;
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
     if (password !== confirmPassword) {
         alert("Passwords match nahi kar rahe.");
         return;
     }
 
-    const schoolName =
-        document.getElementById("schoolName").value.trim();
-
-    const teacherName =
-        document.getElementById("teacherName").value.trim();
-
-    const schoolAddress =
-        document.getElementById("schoolAddress").value.trim();
-
-    const state =
-        document.getElementById("state").value.trim();
-
-    const district =
-        document.getElementById("district").value.trim();
-
-    const email =
-        document.getElementById("email").value.trim();
-
-    const mobile =
-        document.getElementById("mobile").value.trim();
-
-    // Data to save in Supabase
-    const schoolData = {
-        school_name: schoolName,
-        school_address: schoolAddress,
-        state: state,
-        district: district,
-        admin_name: teacherName,
-        email: email,
-        mobile: mobile
-    };
+    const schoolName = document.getElementById("schoolName").value.trim();
+    const teacherName = document.getElementById("teacherName").value.trim();
+    const schoolAddress = document.getElementById("schoolAddress").value.trim();
+    const state = document.getElementById("state").value.trim();
+    const district = document.getElementById("district").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const mobile = document.getElementById("mobile").value.trim();
 
     try {
 
-        const { data, error } = await db
-            .from("schools")
-            .insert([schoolData])
-            .select()
-            .single();
+        // 1. Create Supabase Auth account
+        const { data: authData, error: authError } =
+            await db.auth.signUp({
+                email: email,
+                password: password
+            });
 
-        if (error) {
-            console.error("Supabase signup error:", error);
-            alert("Account create nahi ho paya.\n\n" + error.message);
+        if (authError) {
+            console.error("Auth signup error:", authError);
+            alert("Account create nahi hua.\n\n" + authError.message);
             return;
         }
 
-        // Temporary compatibility with your existing login system
-        // Password is NOT stored in Supabase.
-        const accountData = {
-            schoolName: schoolName,
-            teacherName: teacherName,
-            schoolAddress: schoolAddress,
+        if (!authData.user) {
+            alert("Auth account create nahi hua.");
+            return;
+        }
+
+        // 2. Save school information
+        const schoolData = {
+            school_name: schoolName,
+            school_address: schoolAddress,
             state: state,
             district: district,
+            admin_name: teacherName,
             email: email,
             mobile: mobile,
-            password: password,
-            schoolId: data.id
+            auth_user_id: authData.user.id
         };
 
-        localStorage.setItem(
-            "jnv_account",
-            JSON.stringify(accountData)
-        );
+        const { data: school, error: schoolError } =
+            await db
+                .from("schools")
+                .insert([schoolData])
+                .select()
+                .single();
 
-        // Save Supabase school ID separately for future modules
-        localStorage.setItem(
-            "jnv_school_id",
-            data.id
-        );
+        if (schoolError) {
+            console.error("School insert error:", schoolError);
 
-        alert("Account successfully create ho gaya. ✅");
+            alert(
+                "Auth account ban gaya, lekin school record save nahi hua.\n\n" +
+                schoolError.message
+            );
 
+            return;
+        }
+
+        // 3. Save school ID
+        localStorage.setItem("jnv_school_id", school.id);
+
+        alert("Admin account successfully create ho gaya. ✅");
+
+        // 4. Go to login
         window.location.href = "login.html";
 
     } catch (error) {
+
+        console.error("Signup error:", error);
+
+        alert(
+            "Signup mein problem hui.\n\n" +
+            error.message
+        );
+    }
+});
+
+              } catch (error) {
 
         console.error(error);
 

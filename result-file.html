@@ -93,95 +93,89 @@ const schoolId = localStorage.getItem("jnv_school_id");
 
 let exam = null;
 
-async function loadExam() {console.log("STEP 1: loadExam started");
-    if (!examId || !schoolId) {
+async function loadExam() {
+    try {
+        if (!examId) {
+            throw new Error("URL mein exam ID nahi mili.");
+        }
+
+        if (!schoolId) {
+            throw new Error("jnv_school_id nahi mila.");
+        }
+
         document.getElementById("examInfo").innerHTML =
-            "<div class='not-found'>Exam information not found.</div>";
-        return;
-    }
+            "<b>1/5</b> Exam loading...";
 
-    const { data: examData, error: examError } = await db
-      
-        .from("exams")
-        .select("id, school_id, class_id, exam_name, exam_year, max_marks, student_count")
-        .eq("id", examId)
-        .eq("school_id", schoolId)
-        .single();
-                           console.log("STEP 2: exam query finished", {
-    data: examData,
-    error: examError
-});
+        const { data: examData, error: examError } = await db
+            .from("exams")
+            .select("*")
+            .eq("id", examId)
+            .eq("school_id", schoolId)
+            .single();
 
-    if (examError || !examData) {
-        console.error(examError);
+        if (examError) {
+            throw new Error("EXAMS QUERY: " + examError.message);
+        }
+
         document.getElementById("examInfo").innerHTML =
-            "<div class='not-found'>Exam not found.</div>";
-        return;
+            "<b>2/5</b> Exam OK. Loading class...";
+
+        const { data: classData, error: classError } = await db
+            .from("classes")
+            .select("class_name, section")
+            .eq("id", examData.class_id)
+            .single();
+
+        if (classError) {
+            throw new Error("CLASSES QUERY: " + classError.message);
+        }
+
+        document.getElementById("examInfo").innerHTML =
+            "<b>3/5</b> Class OK. Loading subjects...";
+
+        const { data: subjectData, error: subjectError } = await db
+            .from("exam_subjects")
+            .select("id, subject_name, max_marks")
+            .eq("exam_id", examId);
+
+        if (subjectError) {
+            throw new Error("SUBJECTS QUERY: " + subjectError.message);
+        }
+
+        document.getElementById("examInfo").innerHTML =
+            "<b>4/5</b> Subjects OK. Loading students...";
+
+        const { data: examStudents, error: studentError } = await db
+            .from("exam_students")
+            .select("id, student_id, roll_number_snapshot, student_name_snapshot")
+            .eq("exam_id", examId);
+
+        if (studentError) {
+            throw new Error("EXAM STUDENTS QUERY: " + studentError.message);
+        }
+
+        document.getElementById("examInfo").innerHTML = `
+            <h2>✅ All queries working</h2>
+            <p>Exam: ${examData.exam_name}</p>
+            <p>Class: ${classData.class_name} - ${classData.section}</p>
+            <p>Subjects: ${subjectData.length}</p>
+            <p>Students: ${examStudents.length}</p>
+        `;
+
+    } catch (error) {
+
+        console.error("RESULT FILE ERROR:", error);
+
+        document.getElementById("examInfo").innerHTML = `
+            <div class="not-found">
+                <h2>❌ Exact Error Found</h2>
+                <p>${escapeHtml(error.message)}</p>
+            </div>
+        `;
+
+        document.getElementById("tableBox").innerHTML = "";
     }
-
-    const { data: schoolData } = await db
-        .from("schools")
-        .select("school_name, school_address, state, district")
-        .eq("id", schoolId)
-        .single();
-
-    const { data: classData } = await db
-        .from("classes")
-        .select("class_name, section")
-        .eq("id", examData.class_id)
-        .single();
-
-    const { data: subjectData, error: subjectError } = await db
-        .from("exam_subjects")
-        .select("id, subject_name, max_marks")
-        .eq("exam_id", examId)
-        .order("created_at", { ascending: true });
-
-    if (subjectError) {
-        console.error(subjectError);
-        return;
-    }
-
-    const { data: examStudents, error: studentError } = await db
-        .from("exam_students")
-        .select("id, student_id, roll_number_snapshot, student_name_snapshot")
-        .eq("exam_id", examId)
-        .order("roll_number_snapshot", { ascending: true });
-
-    if (studentError) {
-        console.error(studentError);
-        return;
-    }
-
-    exam = {
-        id: examData.id,
-        schoolName: schoolData?.school_name || "",
-        schoolAddress: schoolData?.school_address || "",
-        state: schoolData?.state || "",
-        district: schoolData?.district || "",
-        examName: examData.exam_name || "",
-        examYear: examData.exam_year || "",
-        className: classData?.class_name || "",
-        section: classData?.section || "",
-        maxMarks: Number(examData.max_marks || 0),
-        subjects: (subjectData || []).map(s => s.subject_name),
-        subjectDetails: subjectData || [],
-        students: (examStudents || []).map(s => ({
-            id: s.id,
-            studentId: s.student_id,
-            rollNumber: s.roll_number_snapshot || "",
-            studentName: s.student_name_snapshot || ""
-        }))
-    };
-
-    renderExam();
-
   }
-
-const examInfo = document.getElementById("examInfo");
-const tableBox = document.getElementById("tableBox");
-
-let rowToDelete = null;
  function renderExam() {
    console.log("STEP 3: renderExam started");
 if (!exam) {

@@ -1,1 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>Result Analysis - JNV Result Manager</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="topbar">
+        <h2>JNV Result Manager</h2>
+
+        <a href="main-dashboard.html">
+            Admin Dashboard
+        </a>
+    </header>
+
+
+    <main class="container">
+
+        <h1>Result Analysis</h1>
+
+        <p>
+            Select an exam to view student results and analysis.
+        </p>
+
+
+        <!-- EXAM SELECTION -->
+
+        <div class="card">
+
+            <label for="examSelect">
+                Select Exam
+            </label>
+
+            <select id="examSelect">
+
+                <option value="">
+                    Loading exams...
+                </option>
+
+            </select>
+
+            <button id="loadResult">
+                View Results
+            </button>
+
+        </div>
+
+
+        <!-- STATUS -->
+
+        <p id="resultMessage"></p>
+
+
+        <!-- RESULT AREA -->
+
+        <div id="resultArea" style="display:none;">
+
+            <h2 id="selectedExamName"></h2>
+
+            <div class="table-wrapper">
+
+                <table id="resultTable">
+
+                    <thead id="resultHead">
+                    </thead>
+
+                    <tbody id="resultBody">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- SUPABASE -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="supabase.js"></script>
+
+    <script src="result-analysis.js"></script>
+
+</body>
+</html>

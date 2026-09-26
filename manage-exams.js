@@ -1,12 +1,10 @@
 const examContainer = document.getElementById("examContainer");
-
 const schoolId = localStorage.getItem("jnv_school_id");
 
 let exams = [];
 
-
 // ===============================
-// LOAD EXAMS FROM SUPABASE
+// LOAD EXAMS
 // ===============================
 
 async function loadExams() {
@@ -27,48 +25,86 @@ async function loadExams() {
         </div>
     `;
 
+    try {
 
-    const { data, error } = await db
-        .from("exams")
-        .select(`
-            id,
-            exam_name,
-            exam_year,
-            max_marks,
-            student_count,
-            created_at,
-            class_id,
-            classes (
-                class_name,
-                section
-            ),
-            exam_subjects (
-                subject_name
-            )
-        `)
-        .eq("school_id", schoolId)
-        .order("created_at", { ascending: false });
+        const { data, error } = await db
+            .from("exams")
+            .select(`
+                id,
+                exam_name,
+                exam_year,
+                max_marks,
+                student_count,
+                created_at,
+                class_id,
+                school_id
+            `)
+            .eq("school_id", schoolId)
+            .order("created_at", { ascending: false });
 
+        if (error) {
+            throw error;
+        }
 
-    if (error) {
-        console.error(error);
+        exams = data || [];
+
+        // Load extra information
+        await Promise.all(
+            exams.map(async function (exam) {
+
+                exam.classInfo = null;
+                exam.subjects = [];
+                exam.actualStudentCount = 0;
+
+                // CLASS
+                if (exam.class_id) {
+
+                    const { data: classData } = await db
+                        .from("classes")
+                        .select("id, class_name, section")
+                        .eq("id", exam.class_id)
+                        .maybeSingle();
+
+                    exam.classInfo = classData;
+                }
+
+                // SUBJECTS
+                const { data: subjects } = await db
+                    .from("exam_subjects")
+                    .select("subject_name")
+                    .eq("exam_id", exam.id)
+                    .order("subject_name");
+
+                exam.subjects = subjects || [];
+
+                // STUDENTS
+                const { count } = await db
+                    .from("exam_students")
+                    .select("id", {
+                        count: "exact",
+                        head: true
+                    })
+                    .eq("exam_id", exam.id);
+
+                exam.actualStudentCount = Number(count || 0);
+
+            })
+        );
+
+        displayExams();
+
+    } catch (error) {
+
+        console.error("loadExams error:", error);
 
         examContainer.innerHTML = `
             <div class="empty">
                 <h3>❌ Exams Load Nahi Hue</h3>
-                <p>${escapeHtml(error.message)}</p>
+                <p>${escapeHtml(error.message || "Unknown error")}</p>
             </div>
         `;
-
-        return;
     }
-
-
-    exams = data || [];
-
-    displayExams();
 }
-
 
 
 // ===============================
@@ -79,8 +115,7 @@ function displayExams() {
 
     examContainer.innerHTML = "";
 
-
-    if (exams.length === 0) {
+    if (!exams.length) {
 
         examContainer.innerHTML = `
             <div class="empty">
@@ -92,41 +127,32 @@ function displayExams() {
         return;
     }
 
+    exams.forEach(function (exam) {
 
-    exams.forEach(function(exam) {
+        const classData = exam.classInfo || {};
 
-        const classData = exam.classes || {};
+        const subjects = exam.subjects.length
+            ? exam.subjects
+                .map(function (subject) {
+                    return subject.subject_name;
+                })
+                .join(", ")
+            : "No subjects";
 
-
-        const subjects =
-            Array.isArray(exam.exam_subjects)
-                ? exam.exam_subjects
-                    .map(function(subject) {
-                        return subject.subject_name;
-                    })
-                    .join(", ")
-                : "No subjects";
-
-
-        const studentCount =
-            Number(exam.student_count || 0);
-
-
-        const createdDate =
-            exam.created_at
-                ? new Date(exam.created_at).toLocaleString()
-                : "-";
-
+        const createdDate = exam.created_at
+            ? new Date(exam.created_at).toLocaleString()
+            : "-";
 
         const card = document.createElement("div");
 
         card.className = "exam-card";
 
-
         card.innerHTML = `
 
             <h3>
-                📝 ${escapeHtml(exam.exam_name || "Unnamed Exam")}
+                📝 ${escapeHtml(
+                    exam.exam_name || "Unnamed Exam"
+                )}
             </h3>
 
             <div class="exam-info">
@@ -153,12 +179,14 @@ function displayExams() {
 
                 <div>
                     <strong>Max Marks:</strong>
-                    ${escapeHtml(String(exam.max_marks || "-"))}
+                    ${escapeHtml(
+                        String(exam.max_marks ?? "-")
+                    )}
                 </div>
 
                 <div>
                     <strong>Students:</strong>
-                    ${studentCount}
+                    ${exam.actualStudentCount}
                 </div>
 
                 <div>
@@ -168,20 +196,22 @@ function displayExams() {
 
             </div>
 
-
             <div class="buttons">
 
                 <button
                     class="btn result-btn"
-                    onclick="openResultFile('${escapeJs(String(exam.id))}')"
+                    onclick="openResultFile('${escapeJs(
+                        exam.id
+                    )}')"
                 >
                     📊 Open Result File
                 </button>
 
-
                 <button
                     class="btn delete-btn"
-                    onclick="deleteExam('${escapeJs(String(exam.id))}')"
+                    onclick="deleteExam('${escapeJs(
+                        exam.id
+                    )}')"
                 >
                     🗑️ Delete
                 </button>
@@ -189,12 +219,10 @@ function displayExams() {
             </div>
         `;
 
-
         examContainer.appendChild(card);
 
     });
 }
-
 
 
 // ===============================
@@ -208,11 +236,10 @@ function openResultFile(examId) {
         return;
     }
 
-
     window.location.href =
-        "result-file.html?id=" + encodeURIComponent(examId);
+        "result-file.html?id=" +
+        encodeURIComponent(examId);
 }
-
 
 
 // ===============================
@@ -221,10 +248,9 @@ function openResultFile(examId) {
 
 function createNewExam() {
 
-    window.location.href = "create-exam.html";
-
+    window.location.href =
+        "create-exam.html";
 }
-
 
 
 // ===============================
@@ -233,78 +259,102 @@ function createNewExam() {
 
 async function deleteExam(examId) {
 
-    const exam = exams.find(function(item) {
+    const exam = exams.find(function (item) {
         return String(item.id) === String(examId);
     });
-
 
     if (!exam) {
         alert("Exam nahi mila.");
         return;
     }
 
-
     const confirmDelete = confirm(
-        `Kya tum "${exam.exam_name}" ko delete karna chahte ho?`
+        `Kya tum "${exam.exam_name}" ko delete karna chahte ho?\n\n` +
+        `Is exam ke students, subjects aur saved marks bhi delete honge.`
     );
-
 
     if (!confirmDelete) {
         return;
     }
 
+    try {
 
-    // Delete exam students first
-    const { error: studentsError } = await db
-        .from("exam_students")
-        .delete()
-        .eq("exam_id", examId);
+        // 1. DELETE RESULTS
+        const { error: resultsError } = await db
+            .from("results")
+            .delete()
+            .eq("exam_id", examId);
+
+        if (resultsError) {
+            throw new Error(
+                "Saved marks delete nahi hue: " +
+                resultsError.message
+            );
+        }
 
 
-    if (studentsError) {
-        console.error(studentsError);
-        alert("Exam students delete nahi hue.");
-        return;
+        // 2. DELETE EXAM STUDENTS
+        const { error: studentsError } = await db
+            .from("exam_students")
+            .delete()
+            .eq("exam_id", examId);
+
+        if (studentsError) {
+            throw new Error(
+                "Exam students delete nahi hue: " +
+                studentsError.message
+            );
+        }
+
+
+        // 3. DELETE SUBJECTS
+        const { error: subjectsError } = await db
+            .from("exam_subjects")
+            .delete()
+            .eq("exam_id", examId);
+
+        if (subjectsError) {
+            throw new Error(
+                "Exam subjects delete nahi hue: " +
+                subjectsError.message
+            );
+        }
+
+
+        // 4. DELETE EXAM
+        const { error: examError } = await db
+            .from("exams")
+            .delete()
+            .eq("id", examId)
+            .eq("school_id", schoolId);
+
+        if (examError) {
+            throw new Error(
+                "Exam delete nahi hua: " +
+                examError.message
+            );
+        }
+
+
+        alert(
+            "Exam successfully delete ho gaya. ✅"
+        );
+
+        await loadExams();
+
+    } catch (error) {
+
+        console.error(
+            "deleteExam error:",
+            error
+        );
+
+        alert(
+            "Exam delete nahi hua.\n\n" +
+            (error.message || "Unknown error")
+        );
     }
-
-
-    // Delete exam subjects
-    const { error: subjectsError } = await db
-        .from("exam_subjects")
-        .delete()
-        .eq("exam_id", examId);
-
-
-    if (subjectsError) {
-        console.error(subjectsError);
-        alert("Exam subjects delete nahi hue.");
-        return;
-    }
-
-
-    // Delete exam
-    const { error: examError } = await db
-        .from("exams")
-        .delete()
-        .eq("id", examId)
-        .eq("school_id", schoolId);
-
-
-    if (examError) {
-        console.error(examError);
-        alert("Exam delete nahi hua.");
-        return;
-    }
-
-
-    alert("Exam successfully delete ho gaya. ✅");
-
-
-    // Reload exams
-    loadExams();
-
 }
-
 
 
 // ===============================
@@ -319,13 +369,11 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-
 }
 
 
-
 // ===============================
-// JAVASCRIPT ESCAPE
+// JS ESCAPE
 // ===============================
 
 function escapeJs(value) {
@@ -333,9 +381,7 @@ function escapeJs(value) {
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/'/g, "\\'");
-
 }
-
 
 
 // ===============================

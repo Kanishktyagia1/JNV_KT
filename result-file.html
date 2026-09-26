@@ -508,24 +508,87 @@ function calculateResults() {
         });
   }
 
-function getStudentData(){
-    return Array.from(document.querySelectorAll("#resultBody tr")).map(row=>{
-        const marks=Array.from(row.querySelectorAll(".marks")).map(input=>input.value===""?null:Number(input.value));
-        const hasMarks=marks.some(m=>m!==null);
-        const total=marks.reduce((s,m)=>s+(m===null?0:m),0);
-        const maxTotal=Number(exam.maxMarks)*exam.subjects.length;
-        const percentage=maxTotal>0?total/maxTotal*100:0;
-        const failed=marks.some(m=>m!==null&&m<33);
+function getStudentData() {
+
+    const maxTotal = exam.subjectDetails.reduce(
+        (sum, subject) => sum + Number(subject.max_marks || 0),
+        0
+    );
+
+    return Array.from(
+        document.querySelectorAll("#resultBody tr")
+    ).map(row => {
+
+        const marks = Array.from(
+            row.querySelectorAll(".marks")
+        ).map(input =>
+            input.value === ""
+                ? null
+                : Number(input.value)
+        );
+
+        const hasMarks = marks.some(
+            mark => mark !== null
+        );
+
+        const total = marks.reduce(
+            (sum, mark) =>
+                sum + (mark === null ? 0 : mark),
+            0
+        );
+
+        const percentage =
+            maxTotal > 0
+                ? (total / maxTotal) * 100
+                : 0;
+
+        const failed = marks.some((mark, index) => {
+
+            if (mark === null) return false;
+
+            const subjectMax = Number(
+                exam.subjectDetails[index]?.max_marks || 0
+            );
+
+            return (
+                subjectMax > 0 &&
+                mark < subjectMax * 0.33
+            );
+        });
+
         return {
-            row,
-            roll:row.querySelector(".roll-number").value.trim(),
-            name:row.querySelector(".student-name").value.trim(),
-            marks,total,percentage,hasMarks,
-            result:!hasMarks?"-":failed?"Fail":"Pass",
-            rank:row.querySelector(".rank").textContent
+            row: row,
+
+            roll: row
+                .querySelector(".roll-number")
+                .value
+                .trim(),
+
+            name: row
+                .querySelector(".student-name")
+                .value
+                .trim(),
+
+            marks: marks,
+
+            total: total,
+
+            percentage: percentage,
+
+            hasMarks: hasMarks,
+
+            result:
+                !hasMarks
+                    ? "-"
+                    : failed
+                        ? "Fail"
+                        : "Pass",
+
+            rank:
+                row.querySelector(".rank").textContent
         };
     });
-}
+              }
 
 function fillSummaryRow(id,label,values,overall){
     const row=document.getElementById(id);

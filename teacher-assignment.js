@@ -30,10 +30,9 @@ async function loadExams() {
     }
 
     const { data: exams, error } = await db
-        .from("exams")
-        .select("id, exam_name, class_id")
-        .eq("school_id", schoolId)
-        .order("created_at", { ascending: false });
+    .from("exams")
+    .select("id, exam_name")
+    .eq("school_id", schoolId);
 
     if (error) {
         console.error(error);

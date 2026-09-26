@@ -368,35 +368,25 @@ signupForm.addEventListener("submit", async function(event) {
             return;
         }
 
-        // 2. Save school information
-        const schoolData = {
-            school_name: schoolName,
-            school_address: schoolAddress,
-            state: state,
-            district: district,
-            admin_name: teacherName,
-            email: email,
-            mobile: mobile,
-            auth_user_id: authData.user.id
-        };
+        
+        //2. Save signup information temporarily
+localStorage.setItem("pending_school_signup", JSON.stringify({
+    school_name: schoolName,
+    school_address: schoolAddress,
+    state: state,
+    district: district,
+    admin_name: teacherName,
+    email: email,
+    mobile: mobile
+}));
 
-        const { data: school, error: schoolError } =
-            await db
-                .from("schools")
-                .insert([schoolData])
-                .select()
-                .single();
+alert(
+    "Your account has been created. ✅\n\n" +
+    "Please check your email and click the verification link.\n\n" +
+    "After verification, login to complete your school registration."
+);
 
-        if (schoolError) {
-            console.error("School insert error:", schoolError);
-
-            alert(
-                "Auth account ban gaya, lekin school record save nahi hua.\n\n" +
-                schoolError.message
-            );
-
-            return;
-        }
+window.location.href = "login.html";
 
         // 3. Save school ID
         alert(

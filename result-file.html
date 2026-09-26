@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result File | JNV Result Manager</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a}
+.topbar{background:#1e3a8a;color:white;padding:18px 25px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+.topbar h2{margin:0;font-size:21px}
+.back-btn{color:white;text-decoration:none;border:1px solid rgba(255,255,255,.5);padding:9px 14px;border-radius:7px;font-size:14px}
+.container{padding:25px;max-width:1500px;margin:auto}
+.exam-info{background:white;padding:22px;border-radius:12px;box-shadow:0 4px 15px rgba(15,23,42,.06);margin-bottom:22px}
+.school-heading{text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:15px;margin-bottom:18px}
+.school-heading h1{margin:0;color:#1e3a8a;font-size:28px;text-transform:uppercase}
+.school-heading p{margin:5px 0;color:#475569;font-size:14px}
+.school-heading h2{margin:12px 0 0;font-size:21px;color:#0f172a}
+.exam-details{display:grid;grid-template-columns:repeat(2,1fr);gap:5px 25px}
+.exam-details p{margin:5px 0}
+.table-box{background:white;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(15,23,42,.06);overflow-x:auto}
+table{width:100%;min-width:1100px;border-collapse:collapse}
+th,td{border:1px solid #94a3b8;padding:9px;text-align:center;font-size:14px}
+th{background:#dbeafe;color:#1e3a8a;font-weight:700}
+td:first-child,td:nth-child(2),td:nth-child(3){text-align:left}
+input{width:100%;min-width:70px;padding:8px;border:1px solid #cbd5e1;border-radius:5px;outline:none}
+input:focus{border-color:#2563eb}
+.student-name{min-width:170px}.roll-number{min-width:90px}
+.save-btn,.add-btn{margin-top:20px;color:white;border:none;padding:12px 20px;border-radius:7px;cursor:pointer;font-size:15px;font-weight:600}
+.save-btn{background:#2563eb}.save-btn:hover{background:#1d4ed8}
+.add-btn{background:#15803d;margin-left:8px}.add-btn:hover{background:#166534}
+.delete-btn{background:#dc2626;color:white;border:none;padding:7px 10px;border-radius:5px;cursor:pointer;font-weight:600}
+.delete-btn:hover{background:#b91c1c}
+.message{margin-top:15px;color:#15803d;font-weight:600}
+.not-found{background:white;padding:25px;border-radius:10px;color:#dc2626}
+.summary-section{margin-top:25px}
+.summary-title{font-size:20px;color:#1e3a8a;margin:0 0 10px}
+.summary-table{min-width:700px}.summary-table th,.summary-table td{border:1px solid #94a3b8;padding:8px}
+.summary-table .summary-label{text-align:left;font-weight:700;min-width:190px}
+.custom-confirm{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);align-items:center;justify-content:center;z-index:1000}
+.confirm-box{background:white;padding:25px;border-radius:12px;width:90%;max-width:350px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.confirm-box h3{margin:0 0 10px}.confirm-box p{color:#475569;margin-bottom:20px}
+.confirm-actions{display:flex;justify-content:center;gap:10px}
+.confirm-actions button{padding:9px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+.cancel-btn{background:#e2e8f0;color:#0f172a}.confirm-delete-btn{background:#dc2626;color:white}
+@media(max-width:700px){
+.topbar{padding:15px}.topbar h2{font-size:17px}.container{padding:12px}
+.exam-info,.table-box{padding:15px}.exam-details{grid-template-columns:1fr}.add-btn{margin-left:0}
+}
+@media print{
+.topbar,.back-btn,.add-btn,.save-btn,.print-btn,.delete-btn,.custom-confirm{display:none!important}
+body{background:white}.container{width:100%;max-width:100%;padding:0}
+.exam-info,.table-box{box-shadow:none;border-radius:0}.school-heading h1{font-size:24px}
+table{min-width:0}th,td{border:1px solid #000;padding:5px;font-size:10px}
+.summary-title{color:#000}
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+<h2>JNV Result Manager</h2>
+<a href="main-dashboard.html" class="back-btn">← Back to Dashboard</a>
+</header>
+
+<main class="container">
+<section class="exam-info" id="examInfo">Loading exam details...</section>
+<section class="table-box" id="tableBox">Loading result table...</section>
+</main>
+
+<div class="custom-confirm" id="customConfirm">
+<div class="confirm-box">
+<h3>Delete Student?</h3>
+<p id="confirmText">Is student ko delete karna hai?</p>
+<div class="confirm-actions">
+<button type="button" class="cancel-btn" onclick="closeConfirm()">Cancel</button>
+<button type="button" class="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+
+const examId = params.get("id") || params.get("examId");
+
+const schoolId = localStorage.getItem("jnv_school_id");
+
+let exam = null;
+
+async function loadExam() {
+    try {
+        if (!examId) {
+            throw new Error("URL mein exam ID nahi mili.");
+        }
+
+        if (!schoolId) {
+            throw new Error("jnv_school_id nahi mila.");
+        }
+
+        const { data: examData, error: examError } = await db
+            .from("exams")
+            .select("*")
+            .eq("id", examId)
+            .eq("school_id", schoolId)
+            .single();
+
+        if (examError) throw examError;
+
+        const { data: schoolData } = await db
+            .from("schools")
+            .select("school_name, school_address, state, district")
+            .eq("id", schoolId)
+            .single();
+
+        const { data: classData, error: classError } = await db
+            .from("classes")
+            .select("class_name, section")
+            .eq("id", examData.class_id)
+            .single();
+
+        if (classError) throw classError;
+
+        const { data: subjectData, error: subjectError } = await db
+            .from("exam_subjects")
+            .select("id, subject_name, max_marks")
+            .eq("exam_id", examId)
+            .order("created_at", { ascending: true });
+
+        if (subjectError) throw subjectError;
+
+        const { data: examStudents, error: studentError } = await db
+            .from("exam_students")
+            .select(
+                "id, student_id, roll_number_snapshot, student_name_snapshot"
+            )
+            .eq("exam_id", examId)
+            .order("roll_number_snapshot", { ascending: true });
+
+        if (studentError) throw studentError;
+
+        exam = {
+            id: examData.id,
+
+            schoolName: schoolData?.school_name || "",
+            schoolAddress: schoolData?.school_address || "",
+            state: schoolData?.state || "",
+            district: schoolData?.district || "",
+
+            examName: examData.exam_name || "",
+            examYear: examData.exam_year || "",
+
+            className: classData?.class_name || "",
+            section: classData?.section || "",
+
+            maxMarks: Number(examData.max_marks || 0),
+
+            subjects: (subjectData || []).map(
+                s => s.subject_name
+            ),
+
+            subjectDetails: subjectData || [],
+
+            students: (examStudents || []).map(s => ({
+                id: s.id,
+                studentId: s.student_id,
+                rollNumber: s.roll_number_snapshot || "",
+                studentName: s.student_name_snapshot || ""
+            }))
+        };
+
+        console.log("FINAL EXAM OBJECT:", exam);
+
+        // 🔥 Ab actual page render hogi
+        renderExam();
+
+    } catch (error) {
+
+        console.error("RESULT FILE ERROR:", error);
+
+        document.getElementById("examInfo").innerHTML = `
+            <div class="not-found">
+                <h2>❌ Error</h2>
+                <p>${escapeHtml(error.message)}</p>
+            </div>
+        `;
+
+        document.getElementById("tableBox").innerHTML = "";
+    }
+  }
+function renderExam() {
+if (!exam) {
+    examInfo.innerHTML = `
+        <div style="padding:20px; text-align:center;">
+            <h2>Exam nahi mila ❌</h2>
+            <p>Manage Exams se result file dobara open karo.</p>
+        </div>
+    `;
+    tableBox.innerHTML = "";
+} else {
+    if (!Array.isArray(exam.subjects)) {
+        exam.subjects = [];
+    }
+
+    examInfo.innerHTML = `
+        <div class="info-grid">
+            <div><strong>Exam:</strong> ${escapeHtml(exam.examName || "")}</div>
+            <div><strong>Academic Year:</strong> ${escapeHtml(exam.examYear || "")}</div>
+            <div><strong>Class:</strong> ${escapeHtml(exam.className || "")}</div>
+            <div><strong>Section:</strong> ${escapeHtml(exam.section || "")}</div>
+            <div><strong>Max Marks:</strong> ${escapeHtml(exam.maxMarks || "")}</div>
+        </div>
+    `;
+
+    // Exam ke students pehle exam.students se, warna class data se lo
+    let studentsForExam = [];
+
+    if (Array.isArray(exam.students) && exam.students.length > 0) {
+        studentsForExam = exam.students;
+    } else {
+        let classList = [];
+        try {
+            classList = JSON.parse(localStorage.getItem("jnv_classes") || "[]");
+        } catch (error) {
+            classList = [];
+        }
+
+        const classData = classList.find(function(c) {
+            return String(c.className).trim() === String(exam.className).trim() &&
+                   String(c.section).trim() === String(exam.section).trim();
+        });
+
+        if (classData && Array.isArray(classData.students)) {
+            studentsForExam = classData.students;
+        }
+    }
+
+    let tableHTML = `
+        <div class="table-scroll">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>S. No.</th>
+                    <th>Roll No.</th>
+                    <th>Student Name</th>
+    `;
+
+    exam.subjects.forEach(function(subject) {
+        tableHTML += `<th>${escapeHtml(subject)}</th>`;
+    });
+
+    tableHTML += `
+                    <th>TOTAL</th>
+                    <th>%AGE</th>
+                    <th>RANK</th>
+                    <th>ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+    `;
+
+    studentsForExam.forEach(function(student, index) {
+        tableHTML += createStudentRow(
+            index + 1,
+            student.rollNumber || "",
+            student.studentName || ""
+        );
+    });
+
+    tableHTML += `
+            </tbody>
+            <tfoot id="summaryBody">
+            </tfoot>
+        </table>
+        </div>
+
+        <div class="button-row">
+            <button type="button" id="addStudentBtn">➕ Add Student</button>
+            <button type="button" id="saveResultBtn">💾 Save Result</button>
+            <button type="button" id="printBtn">🖨️ Print</button>
+            <button type="button" id="excelBtn">📊 Export Excel</button>
+        </div>
+        <div id="message" class="message"></div>
+    `;
+
+    tableBox.innerHTML = tableHTML;
+
+    addMarkListeners();
+    calculateResults();
+    loadSavedResult();
+
+    // Button event listeners
+    document.getElementById("addStudentBtn").addEventListener("click", addStudent);
+    document.getElementById("saveResultBtn").addEventListener("click", saveResult);
+    document.getElementById("printBtn").addEventListener("click", printResult);
+    document.getElementById("excelBtn").addEventListener("click", exportToExcel);
+}}
+
+function escapeHtml(value){
+    return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
+}
+
+function createStudentRow(number, rollNumber = "", studentName = "") {
+
+    let html = `<tr>
+        <td>${number}</td>
+
+        <td>
+            <input
+                type="text"
+                class="roll-number"
+                placeholder="Roll No."
+                value="${escapeHtml(rollNumber)}"
+            >
+        </td>
+
+        <td>
+            <input
+                type="text"
+                class="student-name"
+                placeholder="Student Name"
+                value="${escapeHtml(studentName)}"
+            >
+        </td>`;
+
+    exam.subjects.forEach(function() {
+
+        html += `
+            <td>
+                <input
+                    type="number"
+                    min="0"
+                    max="${exam.maxMarks}"
+                    class="marks"
+                    placeholder="Marks"
+                >
+            </td>`;
+    });
+
+    html += `
+        <td class="total">0</td>
+        <td class="percentage">0%</td>
+        <td class="result">-</td>
+        <td class="rank">-</td>
+
+        <td>
+            <button
+                type="button"
+                class="delete-btn"
+                onclick="deleteStudent(this)"
+            >
+                Delete
+            </button>
+        </td>
+    </tr>`;
+
+    return html;
+}
+
+function addMarkListeners(){
+    document.querySelectorAll(".marks").forEach(input=>{
+        input.addEventListener("input",()=>{calculateResults();updateSummary();});
+    });
+}
+
+function calculateResults(){
+    const rows=document.querySelectorAll("#resultBody tr");
+    const data=[];
+    rows.forEach(row=>{
+        const inputs=row.querySelectorAll(".marks");
+        let total=0,hasMarks=false,failed=false;
+        inputs.forEach(input=>{
+            if(input.value!==""){
+                hasMarks=true;
+                const marks=Number(input.value);
+                total+=marks;
+                if(marks<33) failed=true;
+            }
+        });
+        const maxTotal=Number(exam.maxMarks)*exam.subjects.length;
+        const percentage=maxTotal>0?(total/maxTotal)*100:0;
+        row.querySelector(".total").textContent=hasMarks?total:"0";
+        row.querySelector(".percentage").textContent=hasMarks?percentage.toFixed(2)+"%":"0%";
+        row.querySelector(".result").textContent=!hasMarks?"-":failed?"Fail":"Pass";
+        data.push({row,total,hasMarks});
+    });
+    const ranked=data.filter(s=>s.hasMarks).sort((a,b)=>b.total-a.total);
+    let rank=0,previous=null;
+    ranked.forEach((student,index)=>{
+        if(student.total!==previous){rank=index+1;previous=student.total;}
+        student.row.querySelector(".rank").textContent=rank;
+    });
+    data.filter(s=>!s.hasMarks).forEach(s=>s.row.querySelector(".rank").textContent="-");
+}
+
+function getStudentData(){
+    return Array.from(document.querySelectorAll("#resultBody tr")).map(row=>{
+        const marks=Array.from(row.querySelectorAll(".marks")).map(input=>input.value===""?null:Number(input.value));
+        const hasMarks=marks.some(m=>m!==null);
+        const total=marks.reduce((s,m)=>s+(m===null?0:m),0);
+        const maxTotal=Number(exam.maxMarks)*exam.subjects.length;
+        const percentage=maxTotal>0?total/maxTotal*100:0;
+        const failed=marks.some(m=>m!==null&&m<33);
+        return {
+            row,
+            roll:row.querySelector(".roll-number").value.trim(),
+            name:row.querySelector(".student-name").value.trim(),
+            marks,total,percentage,hasMarks,
+            result:!hasMarks?"-":failed?"Fail":"Pass",
+            rank:row.querySelector(".rank").textContent
+        };
+    });
+}
+
+function fillSummaryRow(id,label,values,overall){
+    const row=document.getElementById(id);
+    if(!row)return;
+    row.innerHTML=`<td class="summary-label">${label}</td>`;
+    values.forEach(v=>row.innerHTML+=`<td>${v}</td>`);
+    row.innerHTML+=`<td>${overall}</td>`;
+}
+
+function updateSummary(){
+    if(!exam)return;
+    const students=getStudentData();
+    const appeared=students.filter(s=>s.hasMarks);
+
+    const subjectStats=exam.subjects.map((_,i)=>{
+        const marks=appeared.map(s=>s.marks[i]).filter(m=>m!==null);
+        const total=marks.reduce((a,b)=>a+b,0);
+        const count=marks.length;
+        const pass=marks.filter(m=>m>=33).length;
+        return {
+            total,
+            appeared:count,
+            average:count?(total/count).toFixed(2):"0.00",
+            passPercentage:count?(pass/count*100).toFixed(1)+"%":"0%",
+            below33:marks.filter(m=>m<33).length,
+            r33to59:marks.filter(m=>m>=33&&m<60).length,
+            r60to74:marks.filter(m=>m>=60&&m<75).length,
+            r75to89:marks.filter(m=>m>=75&&m<90).length,
+            r90:marks.filter(m=>m>=90).length
+        };
+    });
+
+    const percentages=appeared.map(s=>s.percentage);
+    const overallPass=percentages.filter(p=>p>=33).length;
+    const overallPassPct=percentages.length?(overallPass/percentages.length*100).toFixed(1)+"%":"0%";
+
+    fillSummaryRow("summaryTotalRow","TOTAL",subjectStats.map(s=>s.total),"");
+    fillSummaryRow("summaryAppearedRow","APPEARED STUDENTS",subjectStats.map(s=>s.appeared),appeared.length);
+    fillSummaryRow("summaryAverageRow","SUBJECT AVERAGE",subjectStats.map(s=>s.average),"");
+    fillSummaryRow("summaryPassRow","PASS PERCENTAGE",subjectStats.map(s=>s.passPercentage),overallPassPct);
+
+    /* Required order: below 33 first */
+    fillSummaryRow("summaryBelow33Row","below 33",subjectStats.map(s=>s.below33),percentages.filter(p=>p<33).length);
+    fillSummaryRow("summary33to59Row","33 to 59",subjectStats.map(s=>s.r33to59),percentages.filter(p=>p>=33&&p<60).length);
+    fillSummaryRow("summary60to74Row","60 to 74",subjectStats.map(s=>s.r60to74),percentages.filter(p=>p>=60&&p<75).length);
+    fillSummaryRow("summary75to89Row","75 to 89",subjectStats.map(s=>s.r75to89),percentages.filter(p=>p>=75&&p<90).length);
+    fillSummaryRow("summary90Row","90 & above",subjectStats.map(s=>s.r90),percentages.filter(p=>p>=90).length);
+}
+
+      async function saveResult() {
+    try {
+        const rows = document.querySelectorAll("#resultBody tr");
+        const resultData = [];
+
+        rows.forEach((row, studentIndex) => {
+            const student = exam.students[studentIndex];
+            if (!student) return;
+
+            row.querySelectorAll(".marks").forEach((input, subjectIndex) => {
+                if (input.value === "") return;
+
+                resultData.push({
+                    exam_id: exam.id,
+                    exam_student_id: student.id,
+                    subject: exam.subjects[subjectIndex],
+                    marks: Number(input.value)
+                });
+            });
+        });
+
+        if (resultData.length === 0) {
+            alert("Please enter marks first.");
+            return;
+        }
+
+        for (const item of resultData) {
+
+            // Pehle INSERT try karo
+            const { error: insertError } = await db
+                .from("results")
+                .insert(item);
+
+            // Agar duplicate hai, to UPDATE karo
+            if (insertError) {
+
+                if (insertError.code === "23505") {
+
+                    const { error: updateError } = await db
+                        .from("results")
+                        .update({
+                            marks: item.marks
+                        })
+                        .eq("exam_id", item.exam_id)
+                        .eq("exam_student_id", item.exam_student_id)
+                        .eq("subject", item.subject);
+
+                    if (updateError) {
+                        console.error(updateError);
+                        throw updateError;
+                    }
+
+                } else {
+                    console.error(insertError);
+                    throw insertError;
+                }
+            }
+        }
+
+        alert("Result saved successfully!");
+
+    } catch (error) {
+        console.error(error);
+        alert("Result save nahi hua: " + error.message);
+    }
+  }
+async function loadSavedResult() {
+    if (!exam?.id) return;
+
+    const { data: savedResults, error } = await db
+        .from("results")
+        .select("exam_student_id, subject, marks")
+        .eq("exam_id", exam.id);
+
+    if (error) {
+        console.error("Load saved results error:", error);
+        return;
+    }
+
+    const rows = document.querySelectorAll("#resultBody tr");
+
+    rows.forEach((row, index) => {
+        const student = exam.students[index];
+        if (!student) return;
+
+        row.querySelectorAll(".marks").forEach((input, subjectIndex) => {
+            const subject = exam.subjects[subjectIndex];
+
+            const saved = savedResults.find(
+                r =>
+                    r.exam_student_id === student.id &&
+                    r.subject === subject
+            );
+
+            input.value = saved ? saved.marks : "";
+        });
+    });
+
+    addMarkListeners();
+  }
+function addStudent(){
+    const tbody=document.getElementById("resultBody");
+    const number=tbody.querySelectorAll("tr").length+1;
+    tbody.insertAdjacentHTML("beforeend",createStudentRow(number));
+    addMarkListeners();
+    calculateResults();
+    updateSummary();
+}
+
+function deleteStudent(button){
+    rowToDelete=button.closest("tr");
+    const name=rowToDelete.querySelector(".student-name").value.trim();
+    document.getElementById("confirmText").textContent=name?`"${name}" ko delete karna hai?`:"Is student ko delete karna hai?";
+    document.getElementById("customConfirm").style.display="flex";
+}
+
+function closeConfirm(){
+    rowToDelete=null;
+    document.getElementById("customConfirm").style.display="none";
+}
+
+function confirmDelete(){
+    if(rowToDelete){
+        rowToDelete.remove();
+        renumberStudents();
+        calculateResults();
+        updateSummary();
+    }
+    closeConfirm();
+}
+
+function renumberStudents(){
+    document.querySelectorAll("#resultBody tr").forEach((row,i)=>row.children[0].textContent=i+1);
+}
+
+function printResult(){
+    calculateResults();
+    updateSummary();
+    window.print();
+}
+
+/* =========================
+   EXCEL EXPORT - IMAGE STYLE
+   ========================= */
+async function exportToExcel(){
+    if(typeof ExcelJS==="undefined"){
+        alert("Excel system load nahi hua. Internet check karo aur page reload karo.");
+        return;
+    }
+
+    calculateResults();
+    updateSummary();
+
+    const workbook=new ExcelJS.Workbook();
+    const ws=workbook.addWorksheet("Board Result");
+
+    const account=JSON.parse(localStorage.getItem("jnv_account"))||{};
+    const schoolName=account.schoolName||"JAWAHAR NAVODAYA VIDYALAYA";
+    const address=[account.schoolAddress,account.district,account.state].filter(Boolean).join(", ");
+
+    const subjects=exam.subjects||[];
+    const subjectStart=3;
+    const totalCol=subjectStart+subjects.length;
+    const percentageCol=totalCol+1;
+    const rankCol=totalCol+2;
+    const totalCols=rankCol;
+
+    ws.pageSetup={orientation:"landscape",paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0};
+    ws.pageMargins={left:.2,right:.2,top:.3,bottom:.3,header:.1,footer:.1};
+
+    ws.getColumn(1).width=8;
+    ws.getColumn(2).width=30;
+    subjects.forEach((_,i)=>ws.getColumn(subjectStart+i).width=11);
+    ws.getColumn(totalCol).width=11;
+    ws.getColumn(percentageCol).width=11;
+    ws.getColumn(rankCol).width=9;
+
+    const border={
+        top:{style:"thin"},left:{style:"thin"},
+        bottom:{style:"thin"},right:{style:"thin"}
+    };
+
+    ws.mergeCells(1,1,1,totalCols);
+    ws.getCell(1,1).value=schoolName.toUpperCase();
+    ws.getCell(1,1).font={bold:true,size:16};
+    ws.getCell(1,1).alignment={horizontal:"center",vertical:"middle"};
+    ws.getRow(1).height=25;
+
+    ws.mergeCells(2,1,2,totalCols);
+    ws.getCell(2,1).value=address;
+    ws.getCell(2,1).font={size:10};
+    ws.getCell(2,1).alignment={horizontal:"center",vertical:"middle"};
+
+    const leftEnd=Math.floor(totalCols/3);
+    const middleEnd=Math.floor(totalCols*2/3);
+
+    ws.mergeCells(3,1,3,leftEnd);
+    ws.mergeCells(3,leftEnd+1,3,middleEnd);
+    ws.mergeCells(3,middleEnd+1,3,totalCols);
+
+    const titleCells=[
+        [3,1,"CLASS "+(exam.className||"")+" - "+(exam.section||"")],
+        [3,leftEnd+1,(exam.examName||"BOARD RESULT").toUpperCase()],
+        [3,middleEnd+1,"Session "+(exam.examYear||"")]
+    ];
+
+    titleCells.forEach(([r,c,v])=>{
+        const cell=ws.getCell(r,c);
+        cell.value=v;
+        cell.font={bold:true,size:12};
+        cell.alignment={horizontal:"center",vertical:"middle"};
+    });
+    ws.getRow(3).height=22;
+
+    const headers=["S. No.","Student Name",...subjects,"TOTAL","%AGE","RANK"];
+    headers.forEach((h,i)=>{
+        const cell=ws.getCell(5,i+1);
+        cell.value=h;
+        cell.font={bold:true,size:10};
+        cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+        cell.border=border;
+    });
+    ws.getRow(5).height=25;
+
+    const students=getStudentData().filter(s=>s.name||s.roll||s.hasMarks);
+
+    const ranked=[...students].filter(s=>s.hasMarks).sort((a,b)=>b.total-a.total);
+    let rank=0,prev=null;
+    ranked.forEach((s,i)=>{
+        if(s.total!==prev){rank=i+1;prev=s.total;}
+        s.rank=rank;
+    });
+    students.forEach(s=>{if(!s.hasMarks)s.rank="";});
+
+    let rowNo=6;
+    students.forEach((s,i)=>{
+        const values=[i+1,s.name,...s.marks.map(m=>m===null?"":m),s.total,s.hasMarks?Number(s.percentage.toFixed(1)):"",s.rank];
+      values.forEach((v,j)=>{
+            const cell=ws.getCell(rowNo,j+1);
+            cell.value=v;
+            cell.border=border;
+            cell.font={size:10};
+            cell.alignment={horizontal:j===1?"left":"center",vertical:"middle"};
+        });
+        rowNo++;
+    });
+
+    const summaryStart=rowNo;
+    const labels=["TOTAL","APPEARED STUDENTS","SUBJECT AVERAGE","PASS PERCENTAGE","below 33","33 to 59","60 to 74","75 to 89","90 & above"];
+
+    const appeared=students.filter(s=>s.hasMarks);
+    const stats=subjects.map((_,i)=>{
+        const marks=appeared.map(s=>s.marks[i]).filter(m=>m!==null);
+        const count=marks.length,total=marks.reduce((a,b)=>a+b,0);
+        const pass=marks.filter(m=>m>=33).length;
+        return {
+            total,appeared:count,average:count?Math.round(total/count):0,
+            passPercentage:count?(pass/count*100).toFixed(1)+"%":"0%",
+            below33:marks.filter(m=>m<33).length,
+            r33to59:marks.filter(m=>m>=33&&m<60).length,
+            r60to74:marks.filter(m=>m>=60&&m<75).length,
+            r75to89:marks.filter(m=>m>=75&&m<90).length,
+            r90:marks.filter(m=>m>=90).length
+        };
+    });
+
+    const percentages=appeared.map(s=>s.percentage);
+    const overall=[
+        "",
+        appeared.length,
+        "",
+        percentages.length?(percentages.filter(p=>p>=33).length/percentages.length*100).toFixed(1)+"%":"0%",
+        percentages.filter(p=>p<33).length,
+        percentages.filter(p=>p>=33&&p<60).length,
+        percentages.filter(p=>p>=60&&p<75).length,
+        percentages.filter(p=>p>=75&&p<90).length,
+        percentages.filter(p=>p>=90).length
+    ];
+
+    labels.forEach((label,i)=>{
+        const r=summaryStart+i;
+        ws.mergeCells(r,1,r,2);
+        const c=ws.getCell(r,1);
+        c.value=label;c.font={bold:true,size:10};c.alignment={horizontal:"left",vertical:"middle"};c.border=border;
+    });
+
+    stats.forEach((s,i)=>{
+        const values=[s.total,s.appeared,s.average,s.passPercentage,s.below33,s.r33to59,s.r60to74,s.r75to89,s.r90];
+      values.forEach((v,j)=>{
+            const c=ws.getCell(summaryStart+j,subjectStart+i);
+            c.value=v;c.border=border;c.font={size:10};c.alignment={horizontal:"center",vertical:"middle"};
+        });
+    });
+
+    overall.forEach((v,i)=>{
+        const c=ws.getCell(summaryStart+i,totalCol);
+        c.value=v;c.border=border;c.font={size:10};c.alignment={horizontal:"center",vertical:"middle"};
+    });
+
+    for(let i=0;i<9;i++)ws.getRow(summaryStart+i).height=20;
+
+    ws.views=[{state:"frozen",ySplit:5}];
+
+    try{
+        const buffer=await workbook.xlsx.writeBuffer();
+        const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+        const url=URL.createObjectURL(blob);
+        const link=document.createElement("a");
+        link.href=url;
+        link.download=schoolName.replace(/[^a-z0-9]/gi,"_")+"_Result.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        document.getElementById("message").textContent="Excel successfully export ho gayi. 📊✅";
+    }catch(error){
+        console.error(error);
+        alert("Excel export karte waqt error aaya.");
+    }
+}
+  loadExam();
+  </script>
+</body>
+</html>

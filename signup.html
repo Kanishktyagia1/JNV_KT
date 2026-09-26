@@ -399,12 +399,13 @@ signupForm.addEventListener("submit", async function(event) {
         }
 
         // 3. Save school ID
-        localStorage.setItem("jnv_school_id", school.id);
+        alert(
+    "Account create ho gaya. ✅\n\n" +
+    "Apne email inbox mein verification link open karo. " +
+    "Email verify hone ke baad login karo."
+);
 
-        alert("Admin account successfully create ho gaya. ✅");
-
-        // 4. Go to login
-        window.location.href = "login.html";
+window.location.href = "login.html";
 
     } catch (error) {
 

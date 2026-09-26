@@ -359,12 +359,12 @@ signupForm.addEventListener("submit", async function(event) {
 
         if (authError) {
             console.error("Auth signup error:", authError);
-            alert("Account create nahi hua.\n\n" + authError.message);
+            alert("Account has not been created.\n\n" + authError.message);
             return;
         }
 
         if (!authData.user) {
-            alert("Auth account create nahi hua.");
+            alert("Auth account has not been created.");
             return;
         }
 

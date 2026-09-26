@@ -188,14 +188,9 @@
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 
-<script>
+    <script>
 const loginForm = document.getElementById("loginForm");
 const forgotPassword = document.getElementById("forgotPassword");
-
-
-// =====================================
-// LOGIN
-// =====================================
 
 loginForm.addEventListener("submit", async function(event) {
 
@@ -207,102 +202,30 @@ loginForm.addEventListener("submit", async function(event) {
     const password =
         document.getElementById("password").value;
 
-
     if (!teacherId || !password) {
         alert("Please enter Teacher ID/Email and Password.");
         return;
     }
 
-
-    // =================================
-    // SUPABASE AUTH LOGIN
-    // =================================
-
+    // Teacher ID → internal Auth email
     let email = teacherId;
 
-
-    // If Teacher ID is entered,
-    // find its Auth email from teachers table
-
     if (!teacherId.includes("@")) {
-
-        const {
-            data: teacher,
-            error: teacherError
-        } = await db
-            .from("teachers")
-            .select(
-                "id, teacher_name, teacher_id, assigned_subject, auth_user_id"
-            )
-            .eq(
-                "teacher_id",
-                teacherId
-            )
-            .maybeSingle();
-
-
-        if (teacherError) {
-
-            console.error(teacherError);
-
-            alert(
-                "Teacher lookup failed:\n" +
-                teacherError.message
-            );
-
-            return;
-        }
-
-
-        if (!teacher) {
-
-            alert("Teacher ID not found.");
-            return;
-        }
-
-
-        if (!teacher.auth_user_id) {
-
-            alert(
-                "This teacher does not have a login account yet."
-            );
-
-            return;
-        }
-
-
-        // We need the email belonging to auth_user_id.
-        // Supabase client cannot directly read Auth email.
-        //
-        // So for now Teacher ID login requires
-        // the email to be entered.
-
-        alert(
-            "Please login using the email connected to this teacher account."
-        );
-
-        return;
+        email =
+            teacherId.toLowerCase() +
+            "@jnvresultmanager.local";
     }
 
-
-    // =================================
-    // SIGN IN
-    // =================================
-
+    // Supabase Auth login
     const {
         data,
         error
     } = await db.auth.signInWithPassword({
-
         email: email,
-
         password: password
-
     });
 
-
     if (error) {
-
         console.error(error);
 
         alert(
@@ -313,19 +236,12 @@ loginForm.addEventListener("submit", async function(event) {
         return;
     }
 
-
     if (!data.user) {
-
         alert("Login failed. User not found.");
-
         return;
     }
 
-
-    // =================================
-    // FIND TEACHER RECORD
-    // =================================
-
+    // Find teacher profile
     const {
         data: teacher,
         error: teacherError
@@ -339,7 +255,6 @@ loginForm.addEventListener("submit", async function(event) {
             data.user.id
         )
         .maybeSingle();
-
 
     if (teacherError) {
 
@@ -355,7 +270,6 @@ loginForm.addEventListener("submit", async function(event) {
         return;
     }
 
-
     if (!teacher) {
 
         alert(
@@ -367,11 +281,7 @@ loginForm.addEventListener("submit", async function(event) {
         return;
     }
 
-
-    // =================================
-    // SAVE LOGIN INFO
-    // =================================
-
+    // Save login info
     localStorage.setItem(
         "jnv_logged_in",
         "true"
@@ -387,44 +297,42 @@ loginForm.addEventListener("submit", async function(event) {
         JSON.stringify(teacher)
     );
 
-
-    // =================================
-    // GO TO TEACHER DASHBOARD
-    // =================================
-
+    // Teacher dashboard
     window.location.href =
         "teacher-dashboard.html";
-
 });
 
 
-// =====================================
-// FORGOT PASSWORD
-// =====================================
-
+// Forgot Password
 forgotPassword.addEventListener(
     "click",
     async function(event) {
 
         event.preventDefault();
 
-
-        const email =
+        const input =
             document
                 .getElementById("teacherId")
                 .value
                 .trim();
 
-
-        if (!email || !email.includes("@")) {
+        if (!input) {
 
             alert(
-                "Enter your email first, then click Forgot Password."
+                "Enter your Teacher ID or email first."
             );
 
             return;
         }
 
+        let email = input;
+
+        if (!input.includes("@")) {
+
+            email =
+                input.toLowerCase() +
+                "@jnvresultmanager.local";
+        }
 
         const { error } =
             await db.auth.resetPasswordForEmail(
@@ -436,7 +344,6 @@ forgotPassword.addEventListener(
                 }
             );
 
-
         if (error) {
 
             alert(
@@ -447,54 +354,36 @@ forgotPassword.addEventListener(
             return;
         }
 
-
         alert(
-            "Password reset link has been sent to your email."
+            "Password reset link has been sent."
         );
-
     }
 );
 
 
-// =====================================
-// SHOW / HIDE PASSWORD
-// =====================================
-
+// Show / Hide Password
 const togglePassword =
     document.getElementById("togglePassword");
 
 const passwordInput =
     document.getElementById("password");
 
-
 togglePassword.addEventListener(
     "click",
     function() {
 
-        if (
-            passwordInput.type ===
-            "password"
-        ) {
+        if (passwordInput.type === "password") {
 
-            passwordInput.type =
-                "text";
-
-            togglePassword.textContent =
-                "🙈";
+            passwordInput.type = "text";
+            togglePassword.textContent = "🙈";
 
         } else {
 
-            passwordInput.type =
-                "password";
-
-            togglePassword.textContent =
-                "👁️";
-
+            passwordInput.type = "password";
+            togglePassword.textContent = "👁️";
         }
-
     }
 );
-</script>
-
+      </script>
 </body>
 </html>

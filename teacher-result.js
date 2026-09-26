@@ -1,8 +1,8 @@
 // ===============================
-// TEACHER RESULT ENTRY
+// TEACHER RESULT ENTRY - SUPABASE
 // ===============================
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
 
     // ===============================
     // GET LOGGED TEACHER
@@ -11,10 +11,9 @@ document.addEventListener("DOMContentLoaded", function () {
     let teacherData = null;
 
     try {
-        teacherData =
-            JSON.parse(
-                localStorage.getItem("jnv_logged_teacher")
-            );
+        teacherData = JSON.parse(
+            localStorage.getItem("jnv_logged_teacher")
+        );
     } catch (error) {
         teacherData = null;
     }
@@ -63,51 +62,54 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("saveMarks");
 
 
-    let currentExam = null;
-    let students = [];
-
-
     // ===============================
     // LOGIN CHECK
     // ===============================
 
     if (!teacherData) {
-
         window.location.href = "login.html";
+        return;
+    }
+
+    if (!examId || !subject) {
+        resultMessage.textContent =
+            "Invalid exam or subject.";
         return;
     }
 
 
     // ===============================
-    // LOAD EXAMS
+    // LOAD EXAM
     // ===============================
 
-    let exams = [];
+    const {
+        data: exam,
+        error: examError
+    } = await db
+        .from("exams")
+        .select(`
+            id,
+            exam_name,
+            exam_year,
+            class_id,
+            max_marks
+        `)
+        .eq("id", examId)
+        .maybeSingle();
 
-    try {
 
-        exams =
-            JSON.parse(
-                localStorage.getItem("jnv_exams")
-            ) || [];
+    if (examError) {
 
-    } catch (error) {
+        console.error(
+            "Exam loading error:",
+            examError
+        );
 
-        exams = [];
+        resultMessage.textContent =
+            "Exam load nahi ho paaya.";
+
+        return;
     }
-
-
-    // ===============================
-    // FIND EXAM
-    // ===============================
-
-    const exam =
-        exams.find(function (e) {
-
-            return String(e.id) ===
-                String(examId);
-
-        });
 
 
     if (!exam) {
@@ -119,49 +121,39 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    currentExam = exam;
-
-
     // ===============================
-    // LOAD ASSIGNMENTS
+    // CHECK TEACHER ASSIGNMENT
     // ===============================
 
-    let assignments = [];
+    const {
+        data: assignment,
+        error: assignmentError
+    } = await db
+        .from("teacher_assignments")
+        .select(`
+            id,
+            exam_id,
+            teacher_id,
+            subject
+        `)
+        .eq("exam_id", examId)
+        .eq("teacher_id", teacherData.id)
+        .eq("subject", subject)
+        .maybeSingle();
 
-    try {
 
-        assignments =
-            JSON.parse(
-                localStorage.getItem(
-                    "jnv_teacher_assignments"
-                )
-            ) || [];
+    if (assignmentError) {
 
-    } catch (error) {
+        console.error(
+            "Assignment checking error:",
+            assignmentError
+        );
 
-        assignments = [];
+        resultMessage.textContent =
+            "Assignment check nahi ho paaya.";
+
+        return;
     }
-
-
-    // ===============================
-    // CHECK ASSIGNMENT
-    // ===============================
-
-    const assignment =
-        assignments.find(function (a) {
-
-            return (
-                String(a.teacherId).trim() ===
-                String(teacherData.id).trim()
-                &&
-                String(a.examId) ===
-                String(examId)
-                &&
-                String(a.subject).trim().toLowerCase() ===
-                String(subject).trim().toLowerCase()
-            );
-
-        });
 
 
     if (!assignment) {
@@ -174,51 +166,71 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // ===============================
-    // SHOW EXAM INFORMATION
+    // LOAD CLASS
     // ===============================
 
-    examName.textContent =
-        exam.examName || "Exam";
+    let classText = "";
 
-    examClass.textContent =
-        `${exam.className || ""} - ${exam.section || ""}`;
+    const {
+        data: classData,
+        error: classError
+    } = await db
+        .from("classes")
+        .select(`
+            id,
+            class_name,
+            section
+        `)
+        .eq("id", exam.class_id)
+        .maybeSingle();
 
-    examSession.textContent =
-        exam.examYear || "";
 
-    subjectName.textContent =
-        subject || "";
+    if (!classError && classData) {
+
+        classText =
+            `${classData.class_name || ""}`;
+
+        if (classData.section) {
+            classText +=
+                ` - ${classData.section}`;
+        }
+    }
 
 
     // ===============================
-    // FIND SUBJECT INDEX
+    // LOAD SUBJECT
     // ===============================
 
-    const subjects =
-        Array.isArray(exam.subjects)
-            ? exam.subjects
-            : [];
+    const {
+        data: subjectData,
+        error: subjectError
+    } = await db
+        .from("exam_subjects")
+        .select(`
+            id,
+            subject_name,
+            max_marks
+        `)
+        .eq("exam_id", examId)
+        .eq("subject_name", subject)
+        .maybeSingle();
 
 
-    const subjectIndex =
-        subjects.findIndex(function (item) {
+    if (subjectError) {
 
-            const name =
-                typeof item === "string"
-                    ? item
-                    : item.name;
+        console.error(
+            "Subject loading error:",
+            subjectError
+        );
 
-            return String(name)
-                .trim()
-                .toLowerCase() ===
-                String(subject)
-                .trim()
-                .toLowerCase();
+        resultMessage.textContent =
+            "Subject load nahi ho paaya.";
 
-        });
+        return;
+    }
 
 
-    if (subjectIndex === -1) {
+    if (!subjectData) {
 
         resultMessage.textContent =
             "Subject nahi mila.";
@@ -228,92 +240,127 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // ===============================
-    // LOAD RESULT DATA
+    // MAX MARKS
     // ===============================
 
-    let savedResults = [];
-
-    try {
-
-        savedResults =
-            JSON.parse(
-                localStorage.getItem("jnv_results")
-            ) || [];
-
-    } catch (error) {
-
-        savedResults = [];
-    }
-
-
-    /*
-        New format:
-
-        jnv_results = [
-            {
-                examId: "...",
-                students: [...]
-            }
-        ]
-
-        Old format is also supported.
-    */
-
-
-    if (Array.isArray(savedResults)) {
-
-        const resultData =
-            savedResults.find(function (item) {
-
-                return String(item.examId) ===
-                    String(exam.id);
-
-            });
-
-
-        if (
-            resultData &&
-            Array.isArray(resultData.students)
-        ) {
-
-            students =
-                resultData.students;
-        }
-
-    } else if (
-        savedResults &&
-        typeof savedResults === "object"
-    ) {
-
-        // Support old format
-
-        if (
-            Array.isArray(
-                savedResults[exam.id]
-            )
-        ) {
-
-            students =
-                savedResults[exam.id];
-        }
-    }
+    const maxMarks =
+        Number(subjectData.max_marks);
 
 
     // ===============================
-    // IF NO STUDENTS
+    // SHOW EXAM INFORMATION
     // ===============================
 
-    if (students.length === 0) {
+    examName.textContent =
+        exam.exam_name || "Exam";
+
+    examClass.textContent =
+        classText;
+
+    examSession.textContent =
+        exam.exam_year || "";
+
+    subjectName.textContent =
+        subject || "";
+
+
+    // ===============================
+    // LOAD EXAM STUDENTS
+    // ===============================
+
+    const {
+        data: examStudents,
+        error: studentsError
+    } = await db
+        .from("exam_students")
+        .select(`
+            id,
+            roll_number_snapshot,
+            student_name_snapshot
+        `)
+        .eq("exam_id", examId)
+        .order("roll_number_snapshot");
+
+
+    if (studentsError) {
+
+        console.error(
+            "Student loading error:",
+            studentsError
+        );
 
         resultMessage.textContent =
-            "No student result data found for this exam.";
+            "Students load nahi ho paaye.";
+
+        return;
+    }
+
+
+    if (
+        !examStudents ||
+        examStudents.length === 0
+    ) {
+
+        resultMessage.textContent =
+            "No students found for this exam.";
 
         return;
     }
 
 
     // ===============================
-    // SHOW RESULT TABLE
+    // LOAD EXISTING RESULTS
+    // ===============================
+
+    const {
+        data: existingResults,
+        error: resultsError
+    } = await db
+        .from("results")
+        .select(`
+            id,
+            exam_id,
+            exam_student_id,
+            subject,
+            marks
+        `)
+        .eq("exam_id", examId)
+        .eq("subject", subject);
+
+
+    if (resultsError) {
+
+        console.error(
+            "Results loading error:",
+            resultsError
+        );
+
+        resultMessage.textContent =
+            "Existing marks load nahi ho paaye.";
+
+        return;
+    }
+
+
+    // ===============================
+    // CREATE MARKS MAP
+    // ===============================
+
+    const marksMap = {};
+
+    (existingResults || []).forEach(
+        function (result) {
+
+            marksMap[
+                String(result.exam_student_id)
+            ] = result.marks;
+
+        }
+    );
+
+
+    // ===============================
+    // SHOW TABLE
     // ===============================
 
     resultMessage.style.display =
@@ -333,54 +380,52 @@ document.addEventListener("DOMContentLoaded", function () {
     // CREATE STUDENT ROWS
     // ===============================
 
-    students.forEach(function (student, index) {
+    examStudents.forEach(
+        function (student, index) {
 
-        let existingMarks = "";
+            const savedMarks =
+                marksMap[String(student.id)];
+
+            const existingMarks =
+                savedMarks !== undefined &&
+                savedMarks !== null
+                    ? savedMarks
+                    : "";
 
 
-        if (
-            Array.isArray(student.marks) &&
-            student.marks[subjectIndex] !== undefined &&
-            student.marks[subjectIndex] !== ""
-        ) {
+            studentRows.innerHTML += `
 
-            existingMarks =
-                student.marks[subjectIndex];
+                <tr>
+
+                    <td>
+                        ${student.roll_number_snapshot || ""}
+                    </td>
+
+                    <td>
+                        ${student.student_name_snapshot || ""}
+                    </td>
+
+                    <td>
+
+                        <input
+                            type="number"
+                            class="marks-input"
+                            data-student-id="${student.id}"
+                            min="0"
+                            max="${maxMarks}"
+                            step="0.01"
+                            value="${existingMarks}"
+                            inputmode="decimal"
+                            autocomplete="off"
+                        >
+
+                    </td>
+
+                </tr>
+
+            `;
         }
-
-
-        studentRows.innerHTML += `
-
-            <tr>
-
-                <td>
-                    ${student.rollNumber || ""}
-                </td>
-
-                <td>
-                    ${student.studentName || ""}
-                </td>
-
-                <td>
-
-                    <input
-                        type="number"
-                        class="marks-input"
-                        data-index="${index}"
-                        min="0"
-                        max="${Number(exam.maxMarks)}"
-                        step="0.01"
-                        value="${existingMarks}"
-                        inputmode="decimal"
-                        autocomplete="off"
-                    >
-
-                </td>
-
-            </tr>
-
-        `;
-    });
+    );
 
 
     // ===============================
@@ -398,6 +443,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const value =
                         input.value.trim();
 
+
                     if (value === "") {
 
                         input.style.borderColor =
@@ -414,8 +460,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (
                         isNaN(marks) ||
                         marks < 0 ||
-                        marks >
-                        Number(exam.maxMarks)
+                        marks > maxMarks
                     ) {
 
                         input.style.borderColor =
@@ -425,6 +470,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         input.style.borderColor =
                             "";
+
                     }
 
                 }
@@ -439,11 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveMarks.addEventListener(
         "click",
-        function () {
-
-            // -------------------------------
-            // VALIDATE ALL MARKS
-            // -------------------------------
+        async function () {
 
             const inputs =
                 document.querySelectorAll(
@@ -451,13 +493,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
 
 
+            // -------------------------------
+            // VALIDATE
+            // -------------------------------
+
             for (const input of inputs) {
 
                 const value =
                     input.value.trim();
 
-
-                // Empty is allowed
 
                 if (value === "") {
                     continue;
@@ -471,12 +515,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (
                     isNaN(marks) ||
                     marks < 0 ||
-                    marks >
-                    Number(exam.maxMarks)
+                    marks > maxMarks
                 ) {
 
                     alert(
-                        `Marks 0 se ${exam.maxMarks} ke beech hone chahiye.`
+                        `Marks 0 se ${maxMarks} ke beech hone chahiye.`
                     );
 
                     input.focus();
@@ -488,332 +531,124 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             // -------------------------------
-            // SAVE EACH STUDENT'S MARKS
+            // CREATE RESULT ROWS
             // -------------------------------
 
-            inputs.forEach(function (input) {
-
-                const studentIndex =
-                    Number(
-                        input.dataset.index
-                    );
+            const resultRows = [];
 
 
-                if (!students[studentIndex]) {
-                    return;
+            inputs.forEach(
+                function (input) {
+
+                    const value =
+                        input.value.trim();
+
+
+                    // Empty marks ko database mein
+                    // save nahi karenge
+
+                    if (value === "") {
+                        return;
+                    }
+
+
+                    resultRows.push({
+
+                        exam_id:
+                            examId,
+
+                        exam_student_id:
+                            input.dataset.studentId,
+
+                        subject:
+                            subject,
+
+                        marks:
+                            Number(value)
+
+                    });
+
                 }
-
-
-                // Create marks array
-
-                if (
-                    !Array.isArray(
-                        students[studentIndex].marks
-                    )
-                ) {
-
-                    students[studentIndex].marks =
-                        [];
-                }
-
-
-                const value =
-                    input.value.trim();
-
-
-                if (value === "") {
-
-                    students[studentIndex]
-                        .marks[subjectIndex] =
-                        "";
-
-                } else {
-
-                    students[studentIndex]
-                        .marks[subjectIndex] =
-                        Number(value);
-                }
-
-            });
-
-
-            // -------------------------------
-            // CALCULATE RESULTS
-            // -------------------------------
-
-            calculateAllResults(
-                students,
-                exam
             );
 
 
             // -------------------------------
-            // CREATE RESULT OBJECT
+            // SAVE TO SUPABASE
             // -------------------------------
 
-            let results = [];
+            if (resultRows.length === 0) {
 
-            try {
-
-                const stored =
-                    JSON.parse(
-                        localStorage.getItem(
-                            "jnv_results"
-                        )
-                    );
-
-                if (Array.isArray(stored)) {
-
-                    results = stored;
-
-                }
-
-            } catch (error) {
-
-                results = [];
-            }
-
-
-            const resultIndex =
-                results.findIndex(function (item) {
-
-                    return String(item.examId) ===
-                        String(exam.id);
-
-                });
-
-
-            const resultData = {
-
-                examId:
-                    exam.id,
-
-                examName:
-                    exam.examName,
-
-                examYear:
-                    exam.examYear,
-
-                className:
-                    exam.className,
-
-                section:
-                    exam.section,
-
-                subjects:
-                    exam.subjects,
-
-                maxMarks:
-                    exam.maxMarks,
-
-                students:
-                    students
-
-            };
-
-
-            if (resultIndex === -1) {
-
-                results.push(
-                    resultData
+                alert(
+                    "Please enter at least one student's marks."
                 );
 
-            } else {
+                return;
+            }
 
-                results[resultIndex] =
-                    resultData;
+
+            saveMarks.disabled =
+                true;
+
+            saveMarks.textContent =
+                "Saving...";
+
+
+            const {
+                error: saveError
+            } = await db
+                .from("results")
+                .upsert(
+                    resultRows,
+                    {
+                        onConflict:
+                            "exam_id,exam_student_id,subject"
+                    }
+                );
+
+
+            if (saveError) {
+
+                console.error(
+                    "Marks save error:",
+                    saveError
+                );
+
+                alert(
+                    "Marks save nahi hue: " +
+                    saveError.message
+                );
+
+                saveMarks.disabled =
+                    false;
+
+                saveMarks.textContent =
+                    "Save Marks";
+
+                return;
             }
 
 
             // -------------------------------
-            // SAVE TO LOCAL STORAGE
+            // SUCCESS
             // -------------------------------
-
-            localStorage.setItem(
-                "jnv_results",
-                JSON.stringify(results)
-            );
-
 
             alert(
                 "Marks successfully saved! ✅"
             );
 
+
+            saveMarks.disabled =
+                false;
+
+            saveMarks.textContent =
+                "Save Marks";
+
+
+            // Reload saved values
+
+            location.reload();
+
         }
     );
 
 });
-
-
-// ==========================================
-// CALCULATE TOTAL / PERCENTAGE / RESULT / RANK
-// ==========================================
-
-function calculateAllResults(
-    students,
-    exam
-) {
-
-    const subjects =
-        Array.isArray(exam.subjects)
-            ? exam.subjects
-            : [];
-
-
-    const maxMarks =
-        Number(exam.maxMarks) || 0;
-
-
-    const maxTotal =
-        maxMarks *
-        subjects.length;
-
-
-    // ======================================
-    // CALCULATE EACH STUDENT
-    // ======================================
-
-    students.forEach(function (student) {
-
-        let total = 0;
-
-        let hasMarks = false;
-
-        let failed = false;
-
-
-        // Make marks array
-
-        if (
-            !Array.isArray(student.marks)
-        ) {
-
-            student.marks = [];
-        }
-
-
-        subjects.forEach(
-            function (subjectItem, index) {
-
-                const value =
-                    student.marks[index];
-
-
-                if (
-                    value !== "" &&
-                    value !== null &&
-                    value !== undefined &&
-                    !isNaN(Number(value))
-                ) {
-
-                    const marks =
-                        Number(value);
-
-
-                    hasMarks = true;
-
-
-                    total += marks;
-
-
-                    // Normal pass/fail rule
-
-                    if (
-                        marks < 33
-                    ) {
-
-                        failed = true;
-                    }
-
-                }
-
-            }
-        );
-
-
-        // ==================================
-        // PERCENTAGE
-        // ==================================
-
-        const percentage =
-            maxTotal > 0
-                ? (total / maxTotal) * 100
-                : 0;
-
-
-        student.total =
-            hasMarks
-                ? total
-                : 0;
-
-
-        student.percentage =
-            hasMarks
-                ? percentage.toFixed(2) + "%"
-                : "0%";
-
-
-        student.result =
-            hasMarks
-                ? (
-                    failed
-                        ? "Fail"
-                        : "Pass"
-                )
-                : "";
-
-    });
-
-
-    // ======================================
-    // CALCULATE RANK
-    // ======================================
-
-    const rankedStudents =
-        students
-            .filter(function (student) {
-
-                return (
-                    student.total > 0
-                );
-
-            })
-            .sort(function (a, b) {
-
-                return (
-                    b.total -
-                    a.total
-                );
-
-            });
-
-
-    rankedStudents.forEach(
-        function (student, index) {
-
-            student.rank =
-                index + 1;
-
-        }
-    );
-
-
-    // Students with no marks
-
-    students.forEach(
-        function (student) {
-
-            if (
-                !student.total ||
-                student.total <= 0
-            ) {
-
-                student.rank =
-                    "";
-
-            }
-
-        }
-    );
-
-}

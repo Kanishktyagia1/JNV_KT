@@ -755,12 +755,31 @@ function addStudent(){
     updateSummary();
 }
 
-function deleteStudent(button){
-    rowToDelete=button.closest("tr");
-    const name=rowToDelete.querySelector(".student-name").value.trim();
-    document.getElementById("confirmText").textContent=name?`"${name}" ko delete karna hai?`:"Is student ko delete karna hai?";
-    document.getElementById("customConfirm").style.display="flex";
-}
+function deleteStudent(button) {
+    const row = button.closest("tr");
+
+    if (!row) return;
+
+    const nameInput = row.querySelector(".student-name");
+    const name = nameInput ? nameInput.value.trim() : "";
+
+    if (!confirm(
+        name
+            ? `Kya ${name} ko delete karna hai?`
+            : "Kya is student ko delete karna hai?"
+    )) {
+        return;
+    }
+
+    row.remove();
+
+    document.querySelectorAll("#resultBody tr").forEach((row, index) => {
+        row.cells[0].textContent = index + 1;
+    });
+
+    calculateResults();
+    updateSummary();
+  }
 
 function closeConfirm(){
     rowToDelete=null;

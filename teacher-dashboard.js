@@ -1,63 +1,86 @@
+// =====================================
+// CHECK LOGIN
+// =====================================
+
 const teacherData =
     JSON.parse(localStorage.getItem("jnv_logged_teacher"));
 
 if (!teacherData) {
+
     window.location.href = "login.html";
+
 } else {
 
-    document.getElementById("welcomeTeacherName").textContent =
-    teacherData.name;
+    // ===============================
+    // SHOW TEACHER PROFILE
+    // ===============================
 
-document.getElementById("teacherName").textContent =
-    teacherData.name;
+    document.getElementById("welcomeTeacherName").textContent =
+        teacherData.teacher_name;
+
+    document.getElementById("teacherName").textContent =
+        teacherData.teacher_name;
 
     document.getElementById("teacherId").textContent =
-        teacherData.id;
+        teacherData.teacher_id;
 
     document.getElementById("teacherSubject").textContent =
-        teacherData.subject;
+        teacherData.assigned_subject;
 
 
     // ===============================
-    // LOAD TEACHER ASSIGNMENTS
+    // LOAD ASSIGNMENTS
     // ===============================
 
-    const assignments =
-        JSON.parse(
-            localStorage.getItem("jnv_teacher_assignments")
-        ) || [];
-
-    const exams =
-        JSON.parse(
-            localStorage.getItem("jnv_exams")
-        ) || [];
+    loadAssignments();
+}
 
 
-    // Only this teacher's assignments
-    const myAssignments =
-        assignments.filter(
-            assignment =>
-                String(assignment.teacherId).trim()
-                ===
-                String(teacherData.id).trim()
-        );
+// =====================================
+// LOAD TEACHER ASSIGNMENTS
+// =====================================
 
-
-    // ===============================
-    // SHOW ASSIGNED EXAMS
-    // ===============================
+async function loadAssignments() {
 
     const assignedContainer =
         document.getElementById("assignedExams");
 
+    assignedContainer.innerHTML =
+        `<p>Loading assignments...</p>`;
 
-    if (!assignedContainer) {
 
-        console.log(
-            "assignedExams element not found in teacher-dashboard.html"
+    const { data: assignments, error } = await db
+
+        .from("teacher_assignments")
+
+        .select(`
+            id,
+            exam_id,
+            teacher_id,
+            subject
+        `)
+
+        .eq("teacher_id", teacherData.id);
+
+
+    if (error) {
+
+        console.error(
+            "Assignment loading error:",
+            error
         );
 
-    } else if (myAssignments.length === 0) {
+        assignedContainer.innerHTML = `
+            <p>
+                Assignments load nahi ho paaye.
+            </p>
+        `;
+
+        return;
+    }
+
+
+    if (!assignments || assignments.length === 0) {
 
         assignedContainer.innerHTML = `
             <p>
@@ -65,69 +88,131 @@ document.getElementById("teacherName").textContent =
             </p>
         `;
 
-    } else {
-
-        assignedContainer.innerHTML = "";
-
-        myAssignments.forEach(function (assignment) {
-
-            const exam =
-                exams.find(
-                    e =>
-                        String(e.id)
-                        ===
-                        String(assignment.examId)
-                );
-
-
-            if (!exam) {
-                return;
-            }
-
-
-            assignedContainer.innerHTML += `
-
-                <div class="assigned-exam-card">
-
-                    <h3>
-                        ${exam.examName}
-                    </h3>
-
-                    <p>
-                        <strong>Class:</strong>
-                        ${exam.className} - ${exam.section}
-                    </p>
-
-                    <p>
-                        <strong>Session:</strong>
-                        ${exam.examYear}
-                    </p>
-
-                    <p>
-                        <strong>Subject:</strong>
-                        ${assignment.subject}
-                    </p>
-
-                    <button
-                        onclick="openAssignedExam('${exam.id}', '${assignment.subject}')"
-                    >
-                        📝 Open Result
-                    </button>
-
-                </div>
-
-            `;
-        });
+        return;
     }
+
+
+    // ===============================
+    // LOAD EXAM DETAILS
+    // ===============================
+
+    const examIds =
+        assignments.map(
+            assignment => assignment.exam_id
+        );
+
+
+    const { data: exams, error: examError } =
+
+        await db
+
+            .from("exams")
+
+            .select(`
+                id,
+                exam_name,
+                exam_year,
+                class_id
+            `)
+
+            .in("id", examIds);
+
+
+    if (examError) {
+
+        console.error(
+            "Exam loading error:",
+            examError
+        );
+
+        assignedContainer.innerHTML = `
+            <p>
+                Exam details load nahi ho paaye.
+            </p>
+        `;
+
+        return;
+    }
+
+
+    // ===============================
+    // SHOW EXAMS
+    // ===============================
+
+    assignedContainer.innerHTML = "";
+
+
+    assignments.forEach(function (assignment) {
+
+        const exam =
+            exams.find(
+                e =>
+                    String(e.id) ===
+                    String(assignment.exam_id)
+            );
+
+
+        if (!exam) return;
+
+
+        assignedContainer.innerHTML += `
+
+            <div class="assigned-exam-card">
+
+                <h3>
+                    ${exam.exam_name}
+                </h3>
+
+                <p class="exam-detail">
+                    <strong>Session:</strong>
+                    ${exam.exam_year}
+                </p>
+
+                <p class="exam-detail">
+                    <strong>Subject:</strong>
+                    ${assignment.subject}
+                </p>
+
+                <button
+                    onclick="openAssignedExam(
+                        '${exam.id}',
+                        '${assignment.subject}'
+                    )"
+                >
+                    📝 Open Result
+                </button>
+
+            </div>
+
+        `;
+    });
 }
 
 
-// ===============================
+// =====================================
 // OPEN ASSIGNED EXAM
-// ===============================
+// =====================================
 
 function openAssignedExam(examId, subject) {
 
     window.location.href =
         `teacher-result.html?examId=${encodeURIComponent(examId)}&subject=${encodeURIComponent(subject)}`;
 }
+
+
+// =====================================
+// LOGOUT
+// =====================================
+
+document
+    .getElementById("logout")
+    .addEventListener("click", async function () {
+
+        await db.auth.signOut();
+
+        localStorage.removeItem("jnv_logged_in");
+        localStorage.removeItem("jnv_user_role");
+        localStorage.removeItem("jnv_logged_teacher");
+
+        window.location.href = "login.html";
+    });

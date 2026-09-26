@@ -495,6 +495,23 @@ async function loadRecentExams() {
         `;
     }
 }
+      async function loadTotalExams() {
+    const schoolId = localStorage.getItem("jnv_school_id");
+
+    const { count, error } = await db
+        .from("exams")
+        .select("*", { count: "exact", head: true })
+        .eq("school_id", schoolId);
+
+    if (error) {
+        console.error("Total Exams Error:", error);
+        return;
+    }
+
+    document.getElementById("totalExams").textContent = count;
+}
+
+loadTotalExams();
 
 function openResultFile(examId) {
     window.location.href = "result-file.html?id=" + examId;

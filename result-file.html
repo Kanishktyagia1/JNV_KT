@@ -366,14 +366,14 @@ function createStudentRow(number, rollNumber = "", studentName = "") {
             >
         </td>`;
 
-    exam.subjects.forEach(function() {
+    exam.subjectDetails.forEach(function(subject) {
 
         html += `
             <td>
                 <input
                     type="number"
                     min="0"
-                    max="${exam.maxMarks}"
+                    max="${Number(subject.max_marks)}"
                     class="marks"
                     placeholder="Marks"
                 >
@@ -398,7 +398,7 @@ function createStudentRow(number, rollNumber = "", studentName = "") {
     </tr>`;
 
     return html;
-}
+  }
 
 function addMarkListeners(){
     document.querySelectorAll(".marks").forEach(input=>{

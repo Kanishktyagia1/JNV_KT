@@ -94,32 +94,35 @@ const schoolId = localStorage.getItem("jnv_school_id");
 
 let exam = null;
   async function publishResult() {
-    
-
     const confirmPublish = confirm(
         "Are you sure you want to publish this result?"
     );
 
     if (!confirmPublish) return;
 
-    const { error } = await db
+    const { data, error } = await db
         .from("exams")
         .update({ published: true })
-        .eq("id", examId);
-    console.log("Publish examId:", examId);
+        .eq("id", examId)
+        .select();
 
     if (error) {
         alert("Publish failed: " + error.message);
+        console.error(error);
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        alert("Publish failed: Exam update nahi hua.");
         return;
     }
 
     alert("✅ Result published successfully!");
 
     const button = document.getElementById("publishBtn");
-
     button.textContent = "✅ Result Published";
     button.disabled = true;
-  }
+    }
 
 async function loadExam() {
     try {

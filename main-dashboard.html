@@ -512,6 +512,23 @@ async function loadRecentExams() {
 }
 
 loadTotalExams();
+      async function loadTotalStudents() {
+    const schoolId = localStorage.getItem("jnv_school_id");
+
+    const { count, error } = await db
+        .from("students")
+        .select("*", { count: "exact", head: true })
+        .eq("school_id", schoolId);
+
+    if (error) {
+        console.error("Total Students Error:", error);
+        return;
+    }
+
+    document.getElementById("totalStudents").textContent = count;
+}
+
+loadTotalStudents();
 
 function openResultFile(examId) {
     window.location.href = "result-file.html?id=" + examId;

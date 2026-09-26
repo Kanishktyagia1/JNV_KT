@@ -527,6 +527,20 @@ loadTotalExams();
 }
 
 loadTotalStudents();
+      async function loadTotalTeachers() {
+    const { count, error } = await db
+        .from("teachers")
+        .select("*", { count: "exact", head: true });
+
+    if (error) {
+        console.error("Total Teachers Error:", error);
+        return;
+    }
+
+    document.getElementById("totalTeachers").textContent = count;
+}
+
+loadTotalTeachers();
 
 function openResultFile(examId) {
     window.location.href = "result-file.html?id=" + examId;

@@ -406,35 +406,107 @@ function addMarkListeners(){
     });
 }
 
-function calculateResults(){
-    const rows=document.querySelectorAll("#resultBody tr");
-    const data=[];
-    rows.forEach(row=>{
-        const inputs=row.querySelectorAll(".marks");
-        let total=0,hasMarks=false,failed=false;
-        inputs.forEach(input=>{
-            if(input.value!==""){
-                hasMarks=true;
-                const marks=Number(input.value);
-                total+=marks;
-                if(marks<33) failed=true;
+function calculateResults() {
+
+    const rows = document.querySelectorAll("#resultBody tr");
+
+    // All subjects ke maximum marks ka total
+    const maxTotal = exam.subjectDetails.reduce(
+        (sum, subject) => sum + Number(subject.max_marks || 0),
+        0
+    );
+
+    const data = [];
+
+    rows.forEach(row => {
+
+        const inputs = row.querySelectorAll(".marks");
+
+        let total = 0;
+        let hasMarks = false;
+        let failed = false;
+
+        inputs.forEach((input, index) => {
+
+            if (input.value !== "") {
+
+                hasMarks = true;
+
+                const marks = Number(input.value);
+
+                total += marks;
+
+                const subjectMax = Number(
+                    exam.subjectDetails[index]?.max_marks || 0
+                );
+
+                // Subject ke maximum marks ke according 33% pass rule
+                if (
+                    subjectMax > 0 &&
+                    marks < subjectMax * 0.33
+                ) {
+                    failed = true;
+                }
             }
         });
-        const maxTotal=Number(exam.maxMarks)*exam.subjects.length;
-        const percentage=maxTotal>0?(total/maxTotal)*100:0;
-        row.querySelector(".total").textContent=hasMarks?total:"0";
-        row.querySelector(".percentage").textContent=hasMarks?percentage.toFixed(2)+"%":"0%";
-        row.querySelector(".result").textContent=!hasMarks?"-":failed?"Fail":"Pass";
-        data.push({row,total,hasMarks});
+
+        const percentage =
+            maxTotal > 0
+                ? (total / maxTotal) * 100
+                : 0;
+
+        row.querySelector(".total").textContent =
+            hasMarks ? total : "0";
+
+        row.querySelector(".percentage").textContent =
+            hasMarks
+                ? percentage.toFixed(2) + "%"
+                : "0%";
+
+        row.querySelector(".result").textContent =
+            !hasMarks
+                ? "-"
+                : failed
+                    ? "Fail"
+                    : "Pass";
+
+        data.push({
+            row: row,
+            total: total,
+            hasMarks: hasMarks
+        });
     });
-    const ranked=data.filter(s=>s.hasMarks).sort((a,b)=>b.total-a.total);
-    let rank=0,previous=null;
-    ranked.forEach((student,index)=>{
-        if(student.total!==previous){rank=index+1;previous=student.total;}
-        student.row.querySelector(".rank").textContent=rank;
+
+
+    // =========================
+    // RANK CALCULATION
+    // =========================
+
+    const ranked = data
+        .filter(student => student.hasMarks)
+        .sort((a, b) => b.total - a.total);
+
+    let rank = 0;
+    let previousTotal = null;
+
+    ranked.forEach((student, index) => {
+
+        if (student.total !== previousTotal) {
+            rank = index + 1;
+            previousTotal = student.total;
+        }
+
+        student.row.querySelector(".rank").textContent = rank;
     });
-    data.filter(s=>!s.hasMarks).forEach(s=>s.row.querySelector(".rank").textContent="-");
-}
+
+
+    // Jinke marks nahi hain
+    data
+        .filter(student => !student.hasMarks)
+        .forEach(student => {
+            student.row.querySelector(".rank").textContent = "-";
+        });
+  }
 
 function getStudentData(){
     return Array.from(document.querySelectorAll("#resultBody tr")).map(row=>{

@@ -739,6 +739,8 @@ async function loadSavedResult() {
 
     addMarkListeners();
   }
+  calculateResults();
+updateSummary();
 function addStudent(){
     const tbody=document.getElementById("resultBody");
     const number=tbody.querySelectorAll("tr").length+1;

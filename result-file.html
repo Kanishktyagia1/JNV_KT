@@ -106,6 +106,7 @@ let exam = null;
         .from("exams")
         .update({ published: true })
         .eq("id", examId);
+    console.log("Publish examId:", examId);
 
     if (error) {
         alert("Publish failed: " + error.message);

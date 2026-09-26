@@ -1,13 +1,8 @@
 // ===============================
 // TEACHER RESULT ENTRY - SUPABASE
 // ===============================
-console.log("TEACHER RESULT JS LOADED");
 document.addEventListener("DOMContentLoaded", async function () {
-const resultMessage =
-    document.getElementById("resultMessage");
 
-resultMessage.textContent =
-    "JavaScript loaded. Checking exam...";
     // ===============================
     // GET LOGGED TEACHER
     // ===============================
@@ -55,6 +50,8 @@ resultMessage.textContent =
 
     const resultMessage =
         document.getElementById("resultMessage");
+  resultMessage.textContent =
+    "JavaScript loaded. Checking exam...";
 
     const resultTable =
         document.getElementById("resultTable");

@@ -718,7 +718,15 @@ async function exportToExcel(){
     });
     ws.getRow(3).height=22;
 
-    const headers=["S. No.","Student Name",...subjects,"TOTAL","%AGE","RANK"];
+    const headers=[
+    "S. No.",
+    "Student Name",
+    ...subjects,
+    "TOTAL",
+    "%AGE",
+    "RESULT",
+    "RANK"
+];
     headers.forEach((h,i)=>{
         const cell=ws.getCell(5,i+1);
         cell.value=h;

@@ -706,9 +706,9 @@ function updateSummary(){
         console.error(error);
         alert("Result save nahi hua: " + error.message);
     }
-  }
   calculateResults();
 updateSummary();
+  }
   
 async function loadSavedResult() {
     if (!exam?.id) return;

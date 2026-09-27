@@ -581,6 +581,25 @@ loadRecentExams();
 
     window.location.replace("login.html");
 });
+      async function loadPublishedResultsCount() {
+    const schoolId = localStorage.getItem("jnv_school_id");
+
+    const { count, error } = await db
+        .from("exams")
+        .select("id", { count: "exact", head: true })
+        .eq("school_id", schoolId)
+        .eq("published", true);
+
+    if (error) {
+        console.error("Published count error:", error);
+        return;
+    }
+
+    document.getElementById("publishedResultsCount").textContent = count || 0;
+}
+
+// 👇 sab functions ke baad
+loadPublishedResultsCount();
     </script>
 
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Main Dashboar!d | JNV Result Manager</title>
+    <title>Main Dashboard | JNV Result Manager</title>
 
     <link rel="stylesheet" href="style.css">
 
@@ -52,6 +52,10 @@
             border-radius: 8px;
             font-size: 14px;
             transition: 0.2s;
+
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .sidebar-menu a:hover,
@@ -63,6 +67,16 @@
         .logout-link {
             margin-top: 30px;
             color: #fca5a5 !important;
+        }
+
+        .menu-icon {
+            width: 24px;
+            min-width: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
         }
 
         .dashboard-main {
@@ -212,6 +226,24 @@
             font-size: 12px;
         }
 
+        .open-result-btn {
+            display: inline-block;
+            margin-top: 10px;
+            color: white;
+            background: #2563eb;
+            border: none;
+            padding: 9px 13px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .open-result-btn:hover {
+            background: #1d4ed8;
+        }
+
         @media (max-width: 1000px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -249,359 +281,557 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
-
-        .open-result-btn {
-            display: inline-block;
-            margin-top: 10px;
-            color: white;
-            background: #2563eb;
-            border: none;
-            padding: 9px 13px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .open-result-btn:hover {
-            background: #1d4ed8;
-        }
-      .sidebar-menu a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.menu-icon {
-    width: 24px;
-    min-width: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    line-height: 1;
-          }
     </style>
 </head>
 
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout">
 
-        <aside class="sidebar">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-            <div class="sidebar-brand">
-                JNV <span>Result Manager</span>
+        <div class="sidebar-brand">
+            JNV <span>Result Manager</span>
+        </div>
+
+        <nav class="sidebar-menu">
+
+            <a href="#" class="active">
+                <span class="menu-icon">🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="create-exam.html">
+                <span class="menu-icon">➕</span>
+                <span>Create New Exam</span>
+            </a>
+
+            <a href="student-report.html">
+                <span class="menu-icon">🎓</span>
+                <span>Student Report</span>
+            </a>
+
+            <a href="manage-exams.html">
+                <span class="menu-icon">📋</span>
+                <span>Manage Exams</span>
+            </a>
+
+            <a href="teachers.html">
+                <span class="menu-icon">👨‍🏫</span>
+                <span>Teachers</span>
+            </a>
+
+            <a href="teacher-assignment.html">
+                <span class="menu-icon">🔗</span>
+                <span>Teacher Assignment</span>
+            </a>
+
+            <a href="add-classes.html">
+                <span class="menu-icon">👨‍🎓</span>
+                <span>Add Classes</span>
+            </a>
+
+            <a href="#" class="logout-link" id="logoutBtn">
+                <span class="menu-icon">🚪</span>
+                <span>Logout</span>
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="dashboard-main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <div>
+                <h1>Good Morning, Admin 👋</h1>
+                <p>Manage your school's examination results from one place.</p>
             </div>
 
-            <nav class="sidebar-menu">
-    <a href="#" class="active">
-        <span class="menu-icon">🏠</span>
-        <span>Dashboard</span>
-    </a>
+            <div class="profile-box">
+                <strong>Admin</strong>
+                <span>JNV School</span>
+            </div>
 
-    <a href="create-exam.html">
-        <span class="menu-icon">➕</span>
-        <span>Create New Exam</span>
-    </a>
+        </div>
 
-    <a href="student-report.html">
-        <span class="menu-icon">🎓</span>
-        <span>Student Report</span>
-    </a>
 
-    <a href="manage-exams.html">
-        <span class="menu-icon">📋</span>
-        <span>Manage Exams</span>
-    </a>
+        <!-- STATS -->
+        <section class="stats-grid">
 
-    <a href="teachers.html">
-        <span class="menu-icon">👨‍🏫</span>
-        <span>Teachers</span>
-    </a>
+            <div class="stat-card">
+                <p>Total Exams</p>
+                <h2 id="totalExams">0</h2>
+            </div>
 
-    <a href="teacher-assignment.html">
-        <span class="menu-icon">🔗</span>
-        <span>Teacher Assignment</span>
-    </a>
+            <div class="stat-card">
+                <p>Total Students</p>
+                <h2 id="totalStudents">0</h2>
+            </div>
 
-    <a href="add-classes.html">
-        <span class="menu-icon">👨‍🎓</span>
-        <span>Add Classes</span>
-    </a>
+            <div class="stat-card">
+                <p>Total Teachers</p>
+                <h2 id="totalTeachers">0</h2>
+            </div>
 
-    <a href="#" class="logout-link" id="logoutBtn">
-        <span class="menu-icon">🚪</span>
-        <span>Logout</span>
-    </a>
-            </nav>
+            <div class="stat-card">
+                <p>Published Results</p>
+                <h2 id="publishedResultsCount">0</h2>
+            </div>
 
-        </aside>
+        </section>
 
-        <main class="dashboard-main">
 
-            <div class="topbar">
+        <!-- CONTENT -->
+        <section class="content-grid">
 
-                <div>
-                    <h1>Good Morning, Admin 👋</h1>
-                    <p>Manage your school's examination results from one place.</p>
-                </div>
+            <!-- QUICK ACTIONS -->
+            <div class="dashboard-card">
 
-                <div class="profile-box">
-                    <strong>Admin</strong>
-                    <span>JNV School</span>
+                <h2>Quick Actions</h2>
+
+                <div class="action-grid">
+
+                    <a href="create-exam.html" class="action-card">
+                        <h3>➕ Create New Exam</h3>
+                        <p>Generate a new examination result file.</p>
+                    </a>
+
+                    <a href="teachers.html" class="action-card">
+                        <h3>👨‍🏫 Manage Teachers</h3>
+                        <p>Add, edit or approve teacher accounts.</p>
+                    </a>
+
+                    <a href="add-classes.html" class="action-card">
+                        <h3>👨‍🎓 Student Records</h3>
+                        <p>Manage classes, sections and students.</p>
+                    </a>
+
+                    <a href="#" class="action-card">
+                        <h3>📊 Result Analysis</h3>
+                        <p>View marks, percentages and performance.</p>
+                    </a>
+
                 </div>
 
             </div>
 
-            <section class="stats-grid">
 
-                <div class="stat-card">
-                    <p>Total Exams</p>
-                    <h2 id="totalExams">0</h2>
+            <!-- RECENT EXAMS -->
+            <div class="dashboard-card">
+
+                <h2>Recent Exams</h2>
+
+                <div id="recentExams">
+                    <p style="color: #64748b;">
+                        Abhi koi exam create nahi hua.
+                    </p>
                 </div>
 
-                <div class="stat-card">
-                    <p>Total Students</p>
-                    <h2 id="totalStudents">0</h2>
-                </div>
+            </div>
 
-                <div class="stat-card">
-                    <p>Total Teachers</p>
-                    <h2 id="totalTeachers">0</h2>
-                </div>
+        </section>
 
-              <div class="stat-card">
-    <p>Published Results</p>
-    <h2 id="publishedResultsCount">0</h2>
-              </div>
+    </main>
 
-            </section>
+</div>
 
-            <section class="content-grid">
 
-                <div class="dashboard-card">
-
-                    <h2>Quick Actions</h2>
-
-                    <div class="action-grid">
-
-                        <a href="create-exam.html" class="action-card">
-                            <h3>➕ Create New Exam</h3>
-                            <p>Generate a new examination result file.</p>
-                        </a>
-
-                        <a href="teachers.html" class="action-card">
-                            <h3>👨‍🏫 Manage Teachers</h3>
-                            <p>Add, edit or approve teacher accounts.</p>
-                        </a>
-
-                        <a href="#" class="action-card">
-                            <h3>👨‍🎓 Student Records</h3>
-                            <p>Manage classes, sections and students.</p>
-                        </a>
-
-                        <a href="#" class="action-card">
-                            <h3>📊 Result Analysis</h3>
-                            <p>View marks, percentages and performance.</p>
-                        </a>
-
-                    </div>
-
-                </div>
-
-                <div class="dashboard-card">
-
-                    <h2>Recent Exams</h2>
-
-                    <div id="recentExams">
-                        <p style="color: #64748b;">
-                            Abhi koi exam create nahi hua.
-                        </p>
-                    </div>
-
-                </div>
-
-            </section>
-
-        </main>
-
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
 
-    <script>
-        const recentExams = document.getElementById("recentExams");
 
-async function loadRecentExams() {
-    try {
-        const schoolId = localStorage.getItem("jnv_school_id");
+<script>
 
-        if (!schoolId) {
-            throw new Error("School ID nahi mila.");
+    /* ================================
+       RECENT EXAMS
+    ================================= */
+
+    const recentExams =
+        document.getElementById("recentExams");
+
+
+    async function loadRecentExams() {
+
+        try {
+
+            const schoolId =
+                localStorage.getItem("jnv_school_id");
+
+            if (!schoolId) {
+                throw new Error("School ID nahi mila.");
+            }
+
+            const { data: exams, error } = await db
+                .from("exams")
+                .select("id, exam_name, class_id, created_at, published")
+                .eq("school_id", schoolId)
+                .order("created_at", { ascending: false })
+                .limit(5);
+
+
+            if (error) {
+                throw error;
+            }
+
+
+            if (!exams || exams.length === 0) {
+
+                recentExams.innerHTML = `
+                    <p style="color: #64748b;">
+                        Abhi koi exam create nahi hua.
+                    </p>
+                `;
+
+                return;
+            }
+
+
+            recentExams.innerHTML = "";
+
+
+            exams.forEach(function (exam) {
+
+                const examItem =
+                    document.createElement("div");
+
+                examItem.className = "exam-item";
+
+
+                const statusText =
+                    exam.published
+                        ? "Published"
+                        : "Created";
+
+
+                const statusClass =
+                    exam.published
+                        ? "status"
+                        : "status";
+
+
+                examItem.innerHTML = `
+
+                    <div>
+
+                        <h3>
+                            ${exam.exam_name}
+                        </h3>
+
+                        <button
+                            class="open-result-btn"
+                            onclick="openResultFile('${exam.id}')"
+                        >
+                            Open Result File →
+                        </button>
+
+                    </div>
+
+                    <span class="${statusClass}">
+                        ${exam.published ? "Published ✅" : "Created"}
+                    </span>
+
+                `;
+
+
+                recentExams.appendChild(examItem);
+
+            });
+
         }
 
-        const { data: exams, error } = await db
-            .from("exams")
-            .select("id, exam_name, class_id, created_at")
-            .eq("school_id", schoolId)
-            .order("created_at", { ascending: false })
-            .limit(5);
+        catch (error) {
 
-        if (error) throw error;
+            console.error(
+                "Recent Exams Error:",
+                error
+            );
 
-        if (!exams || exams.length === 0) {
             recentExams.innerHTML = `
-                <p style="color: #64748b;">
-                    Abhi koi exam create nahi hua.
+                <p style="color:#dc2626;">
+                    Exams load nahi ho paaye.
                 </p>
             `;
+
+        }
+
+    }
+
+
+    /* ================================
+       TOTAL EXAMS
+    ================================= */
+
+    async function loadTotalExams() {
+
+        const schoolId =
+            localStorage.getItem("jnv_school_id");
+
+
+        if (!schoolId) {
+            console.error("School ID nahi mila.");
             return;
         }
 
-        recentExams.innerHTML = "";
 
-        exams.forEach(function(exam) {
+        const { count, error } = await db
+            .from("exams")
+            .select("id", {
+                count: "exact",
+                head: true
+            })
+            .eq("school_id", schoolId);
 
-            const examItem = document.createElement("div");
-            examItem.className = "exam-item";
 
-            examItem.innerHTML = `
-                <div>
-                    <h3>${exam.exam_name}</h3>
+        if (error) {
 
-                    <button
-                        class="open-result-btn"
-                        onclick="openResultFile('${exam.id}')"
-                    >
-                        Open Result File →
-                    </button>
-                </div>
+            console.error(
+                "Total Exams Error:",
+                error
+            );
 
-                <span class="status">Created</span>
-            `;
+            return;
+        }
 
-            recentExams.appendChild(examItem);
-        });
 
-    } catch (error) {
-        alert("ERROR: " + error.message);
+        document.getElementById(
+            "totalExams"
+        ).textContent = count ?? 0;
 
-        recentExams.innerHTML = `
-            <p style="color:#dc2626;">
-                Exams load nahi ho paaye.
-            </p>
-        `;
-    }
-}
-      async function loadTotalExams() {
-    const schoolId = localStorage.getItem("jnv_school_id");
-
-    const { count, error } = await db
-        .from("exams")
-        .select("*", { count: "exact", head: true })
-        .eq("school_id", schoolId);
-
-    if (error) {
-        console.error("Total Exams Error:", error);
-        return;
     }
 
-    document.getElementById("totalExams").textContent = count;
-}
 
-loadTotalExams();
-      async function loadTotalStudents() {
+    /* ================================
+       TOTAL STUDENTS
+    ================================= */
 
-    const { count, error } = await db
-        .from("students")
-        .select("*", { count: "exact", head: true });
+    async function loadTotalStudents() {
 
-    if (error) {
-        console.error("Total Students Error:", error);
-        return;
+        const schoolId =
+            localStorage.getItem("jnv_school_id");
+
+
+        if (!schoolId) {
+            console.error("School ID nahi mila.");
+            return;
+        }
+
+
+        /*
+         Students table me school_id nahi hai.
+         Isliye abhi existing students ka total count.
+        */
+
+        const { count, error } = await db
+            .from("students")
+            .select("id", {
+                count: "exact",
+                head: true
+            });
+
+
+        if (error) {
+
+            console.error(
+                "Total Students Error:",
+                error
+            );
+
+            return;
+        }
+
+
+        document.getElementById(
+            "totalStudents"
+        ).textContent = count ?? 0;
+
     }
 
-    document.getElementById("totalStudents").textContent = count;
-}
 
-loadTotalStudents();
-      async function loadTotalTeachers() {
-    const { count, error } = await db
-        .from("teachers")
-        .select("*", { count: "exact", head: true });
+    /* ================================
+       TOTAL TEACHERS
+    ================================= */
 
-    if (error) {
-        console.error("Total Teachers Error:", error);
-        return;
+    async function loadTotalTeachers() {
+
+        const schoolId =
+            localStorage.getItem("jnv_school_id");
+
+
+        if (!schoolId) {
+            console.error("School ID nahi mila.");
+            return;
+        }
+
+
+        const { count, error } = await db
+            .from("teachers")
+            .select("id", {
+                count: "exact",
+                head: true
+            })
+            .eq("school_id", schoolId);
+
+
+        if (error) {
+
+            console.error(
+                "Total Teachers Error:",
+                error
+            );
+
+            return;
+        }
+
+
+        document.getElementById(
+            "totalTeachers"
+        ).textContent = count ?? 0;
+
     }
 
-    document.getElementById("totalTeachers").textContent = count;
-}
 
-loadTotalTeachers();
+    /* ================================
+       PUBLISHED RESULTS
+    ================================= */
 
-function openResultFile(examId) {
-    window.location.href = "result-file.html?id=" + examId;
-}
-async function loadPublishedResultsCount() {
-    const schoolId = localStorage.getItem("jnv_school_id");
+    async function loadPublishedResultsCount() {
 
-    const { count, error } = await db
-        .from("exams")
-        .select("id", { count: "exact", head: true })
-        .eq("school_id", schoolId)
-        .eq("published", true);
+        const schoolId =
+            localStorage.getItem("jnv_school_id");
 
-    if (error) {
-        console.error("Published count error:", error);
-        return;
+
+        if (!schoolId) {
+
+            console.error(
+                "Published Results: School ID nahi mila."
+            );
+
+            return;
+        }
+
+
+        const { count, error } = await db
+            .from("exams")
+            .select("id", {
+                count: "exact",
+                head: true
+            })
+            .eq("school_id", schoolId)
+            .eq("published", true);
+
+
+        if (error) {
+
+            console.error(
+                "Published Results Error:",
+                error
+            );
+
+            return;
+        }
+
+
+        console.log(
+            "Published Results Count:",
+            count
+        );
+
+
+        document.getElementById(
+            "publishedResultsCount"
+        ).textContent = count ?? 0;
+
     }
 
-    document.getElementById("publishedResultsCount").textContent = count || 0;
-          }
-loadRecentExams();
-      document.getElementById("logoutBtn").addEventListener("click", async function (e) {
-    e.preventDefault();
 
-    console.log("Logout clicked");
+    /* ================================
+       OPEN RESULT
+    ================================= */
 
-    const { error } = await db.auth.signOut();
+    function openResultFile(examId) {
 
-    if (error) {
-        console.error("Logout error:", error);
-        alert("Logout failed: " + error.message);
-        return;
+        window.location.href =
+            "result-file.html?id=" + examId;
+
     }
 
-    localStorage.clear();
 
-    alert("Logged out successfully ✅");
+    /* ================================
+       LOGOUT
+    ================================= */
 
-    window.location.replace("login.html");
-});
-      async function loadPublishedResultsCount() {
-    const schoolId = localStorage.getItem("jnv_school_id");
+    document
+        .getElementById("logoutBtn")
+        .addEventListener(
+            "click",
+            async function (e) {
 
-    const { count, error } = await db
-        .from("exams")
-        .select("id", { count: "exact", head: true })
-        .eq("school_id", schoolId)
-        .eq("published", true);
+                e.preventDefault();
 
-    if (error) {
-        console.error("Published count error:", error);
-        return;
-    }
 
-    document.getElementById("publishedResultsCount").textContent = count || 0;
-}
+                console.log(
+                    "Logout clicked"
+                );
 
-// 👇 sab functions ke baad
-loadPublishedResultsCount();
-    </script>
 
+                const { error } =
+                    await db.auth.signOut();
+
+
+                if (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+                    alert(
+                        "Logout failed: " +
+                        error.message
+                    );
+
+                    return;
+                }
+
+
+                localStorage.clear();
+
+
+                alert(
+                    "Logged out successfully ✅"
+                );
+
+
+                window.location.replace(
+                    "login.html"
+                );
+
+            }
+        );
+
+
+    /* ================================
+       LOAD DASHBOARD
+    ================================= */
+
+    loadTotalExams();
+
+    loadTotalStudents();
+
+    loadTotalTeachers();
+
+    loadPublishedResultsCount();
+
+    loadRecentExams();
+
+</script>
 
 </body>
 </html>

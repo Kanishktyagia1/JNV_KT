@@ -47,13 +47,41 @@ let exam=null;
 
 const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
 
-async function publishResult(){
-    if(!confirm("Are you sure you want to publish this result?")) return;
-    const {data,error}=await db.from("exams").update({published:true}).eq("id",examId).eq("school_id",schoolId).select();
-    if(error||!data?.length){alert("Publish failed: "+(error?.message||"Exam update nahi hua."));return}
+async function publishResult() {
+    if (!confirm("Are you sure you want to publish this result?")) return;
+
+    console.log("Publish clicked");
+    console.log("examId:", examId);
+    console.log("schoolId:", schoolId);
+
+    const { data, error } = await db
+        .from("exams")
+        .update({ published: true })
+        .eq("id", examId)
+        .eq("school_id", schoolId)
+        .select();
+
+    console.log("Publish response:", data, error);
+
+    if (error) {
+        alert("Publish failed: " + error.message);
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        alert("Exam update nahi hua. Exam ID/School ID check karo.");
+        return;
+    }
+
     alert("✅ Result published successfully!");
-    const b=document.getElementById("publishBtn"); if(b){b.textContent="✅ Result Published";b.disabled=true;}
-}
+
+    const b = document.getElementById("publishBtn");
+
+    if (b) {
+        b.textContent = "✅ Result Published";
+        b.disabled = true;
+    }
+                }
 
 async function loadExam(){
     try{

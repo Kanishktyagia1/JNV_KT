@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result File | JNV Result Manager</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a}
+.topbar{background:#1e3a8a;color:white;padding:18px 25px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+.topbar h2{margin:0;font-size:21px}.back-btn{color:white;text-decoration:none;border:1px solid rgba(255,255,255,.5);padding:9px 14px;border-radius:7px;font-size:14px}
+.container{padding:25px;max-width:1500px;margin:auto}
+.exam-info,.table-box{background:white;padding:22px;border-radius:12px;box-shadow:0 4px 15px rgba(15,23,42,.06);margin-bottom:22px}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 25px}
+.table-box{overflow-x:auto}
+table{width:100%;min-width:1100px;border-collapse:collapse}
+th,td{border:1px solid #94a3b8;padding:9px;text-align:center;font-size:14px}
+th{background:#dbeafe;color:#1e3a8a;font-weight:700}
+td:first-child,td:nth-child(2),td:nth-child(3){text-align:left}
+input{width:100%;min-width:70px;padding:8px;border:1px solid #cbd5e1;border-radius:5px;outline:none}
+input:focus{border-color:#2563eb}
+.student-name{min-width:170px}.roll-number{min-width:90px}
+.button-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.button-row button{color:white;border:none;padding:12px 16px;border-radius:7px;cursor:pointer;font-size:14px;font-weight:600}
+#addStudentBtn{background:#15803d}#saveResultBtn{background:#2563eb}#printBtn{background:#475569}#excelBtn{background:#7c3aed}#publishBtn{background:#ea580c}
+.delete-btn{background:#dc2626;color:white;border:none;padding:7px 10px;border-radius:5px;cursor:pointer;font-weight:600}
+.message{margin-top:15px;color:#15803d;font-weight:600}.not-found{background:white;padding:25px;border-radius:10px;color:#dc2626}
+@media(max-width:700px){.topbar{padding:15px}.topbar h2{font-size:17px}.container{padding:12px}.exam-info,.table-box{padding:15px}.info-grid{grid-template-columns:1fr}}
+@media print{.topbar,.back-btn,.button-row,.delete-btn{display:none!important}body{background:white}.container{width:100%;max-width:100%;padding:0}.exam-info,.table-box{box-shadow:none;border-radius:0}th,td{padding:5px;font-size:10px}}
+</style>
+</head>
+<body>
+<header class="topbar"><h2>JNV Result Manager</h2><a href="main-dashboard.html" class="back-btn">← Back to Dashboard</a></header>
+<main class="container">
+<section class="exam-info" id="examInfo">Loading exam details...</section>
+<section class="table-box" id="tableBox">Loading result table...</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<script src="supabase.js"></script>
+<script>
+const params=new URLSearchParams(location.search);
+const examId=params.get("id")||params.get("examId");
+const schoolId=localStorage.getItem("jnv_school_id");
+let exam=null;
+
+const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
+
+async
+=await db.from("exams").update({}).eq("id",examId).eq("school_id",schoolId).select();
+    if(error||!data?.length){alert("Publish failed: "+(error?.message||"Exam update nahi hua."));return}
+    alert("✅ Result published successfully!");
+    const b=document.getElementById("publishBtn"); if(b){b.textContent="✅ Result Published";b.disabled=true;}
+}
+
+async function loadExam(){
+    try{
+        if(!examId) throw new Error("URL mein exam ID nahi mili.");
+        if(!schoolId) throw new Error("jnv_school_id nahi mila.");
+
+        const {data:examData,error:examError}=await db.from("exams").select("*").eq("id",examId).eq("school_id",schoolId).single();
+        if(examError) throw examError;
+
+        const {data:schoolData}=await db.from("schools").select("school_name,school_address,state,district").eq("id",schoolId).single();
+        const {data:classData,error:classError}=await db.from("classes").select("class_name,section").eq("id",examData.class_id).single();
+        if(classError) throw classError;
+
+        const {data:subjectData,error:subjectError}=await db.from("exam_subjects").select("id,subject_name,max_marks").eq("exam_id",examId).order("created_at",{ascending:true});
+        if(subjectError) throw subjectError;
+
+        const {data:examStudents,error:studentError}=await db.from("exam_students").select("id,student_id,roll_number_snapshot,student_name_snapshot").eq("exam_id",examId).order("roll_number_snapshot",{ascending:true});
+        if(studentError) throw studentError;
+
+        exam={
+            id:examData.id,schoolName:schoolData?.school_name||"",schoolAddress:schoolData?.school_address||"",
+            state:schoolData?.state||"",district:schoolData?.district||"",examName:examData.exam_name||"",
+            examYear:examData.exam_year||"",className:classData?.class_name||"",section:classData?.section||"",
+            maxMarks:Number(examData.max_marks||0),subjects:(subjectData||[]).map(s=>s.subject_name),
+            subjectDetails:subjectData||[],students:(examStudents||[]).map(s=>({
+                id:s.id,studentId:s.student_id,rollNumber:s.roll_number_snapshot||"",studentName:s.student_name_snapshot||""
+            }))
+        };
+        renderExam();
+    }catch(error){
+        console.error("RESULT FILE ERROR:",error);
+        document.getElementById("examInfo").innerHTML=`<div class="not-found"><h2>❌ Error</h2><p>${escapeHtml(error.message)}</p></div>`;
+        document.getElementById("tableBox").innerHTML="";
+    }
+}
+
+function renderExam(){
+    if(!exam){document.getElementById("examInfo").innerHTML="<h2>Exam nahi mila ❌</h2>";return}
+    document.getElementById("examInfo").innerHTML=`
+      <div class="info-grid">
+        <div><strong>Exam:</strong> ${escapeHtml(exam.examName)}</div>
+        <div><strong>Academic Year:</strong> ${escapeHtml(exam.examYear)}</div>
+        <div><strong>Class:</strong> ${escapeHtml(exam.className)}</div>
+        <div><strong>Section:</strong> ${escapeHtml(exam.section)}</div>
+        <div><strong>Max Marks:</strong> ${exam.maxMarks}</div>
+      </div>`;
+
+    let tableHTML=`<table id="resultTable"><thead><tr>
+      <th>S. No.</th><th>Roll No.</th><th>Student Name</th>`;
+    exam.subjects.forEach(s=>tableHTML+=`<th>${escapeHtml(s)}</th>`);
+    tableHTML+=`<th>TOTAL</th><th>%AGE</th><th>RESULT</th><th>RANK</th><th>ACTION</th></tr></thead><tbody id="resultBody">`;
+    exam.students.forEach((s,i)=>tableHTML+=createStudentRow(i+1,s.rollNumber,s.studentName));
+    tableHTML+=`</tbody></table>
+      <div class="button-row">
+        <button id="addStudentBtn">➕ Add Student</button>
+        <button id="saveResultBtn">💾 Save Result</button>
+        <button id="printBtn">🖨️ Print</button>
+        <button id="excelBtn">📊 Export Excel</button>
+      </div><div id="message" class="message"></div>`;
+    document.getElementById("tableBox").innerHTML=tableHTML;
+
+    document.getElementById("publishBtn").onclick=publishResult;
+    addMarkListeners();calculateResults();loadSavedResult();
+
+    document.getElementById("addStudentBtn").onclick=addStudent;
+    document.getElementById("saveResultBtn").onclick=saveResult;
+    document.getElementById("printBtn").onclick=()=>window.print();
+    document.getElementById("excelBtn").onclick=exportToExcel;
+}
+
+function createStudentRow(n,roll="",name=""){
+    let h=`<tr><td>${n}</td><td><input class="roll-number" value="${escapeHtml(roll)}" placeholder="Roll No."></td><td><input class="student-name" value="${escapeHtml(name)}" placeholder="Student Name"></td>`;
+    exam.subjectDetails.forEach(s=>h+=`<td><input type="number" min="0" max="${Number(s.max_marks)}" class="marks" placeholder="Marks"></td>`);
+    return h+`<td class="total">0</td><td class="percentage">0%</td><td class="result">-</td><td class="rank">-</td><td><button class="delete-btn" onclick="deleteStudent(this)">Delete</button></td></tr>`;
+}
+
+function addMarkListeners(){document.querySelectorAll(".marks").forEach(i=>i.oninput=()=>{calculateResults()})}
+
+function calculateResults(){
+    const rows=[...document.querySelectorAll("#resultBody tr")];
+    const maxTotal=exam.subjectDetails.reduce((a,s)=>a+Number(s.max_marks||0),0);
+    const data=rows.map(row=>{
+        const inputs=[...row.querySelectorAll(".marks")];
+        let total=0,hasMarks=false,failed=false;
+        inputs.forEach((input,i)=>{
+            if(input.value!==""){
+                hasMarks=true;const m=Number(input.value);total+=m;
+                const max=Number(exam.subjectDetails[i]?.max_marks||0);
+                if(max>0&&m<max*.33) failed=true;
+            }
+        });
+        const pct=maxTotal?(total/maxTotal)*100:0;
+        row.querySelector(".total").textContent=hasMarks?total:0;
+        row.querySelector(".percentage").textContent=hasMarks?pct.toFixed(2)+"%":"0%";
+        row.querySelector(".result").textContent=!hasMarks?"-":failed?"Fail":"Pass";
+        return {row,total,hasMarks};
+    });
+    const ranked=data.filter(x=>x.hasMarks).sort((a,b)=>b.total-a.total);
+    let rank=0,prev=null;
+    ranked.forEach((s,i)=>{if(s.total!==prev){rank=i+1;prev=s.total}s.row.querySelector(".rank").textContent=rank});
+    data.filter(x=>!x.hasMarks).forEach(x=>x.row.querySelector(".rank").textContent="-");
+}
+
+async function loadSavedResult(){
+    if(!exam?.id)return;
+    const {data,error}=await db.from("results").select("exam_student_id,subject,marks").eq("exam_id",exam.id);
+    if(error){console.error(error);return}
+    document.querySelectorAll("#resultBody tr").forEach((row,i)=>{
+        const student=exam.students[i];if(!student)return;
+        row.querySelectorAll(".marks").forEach((input,j)=>{
+            const saved=data.find(r=>r.exam_student_id===student.id&&r.subject===exam.subjects[j]);
+            input.value=saved?saved.marks:"";
+        });
+    });
+    calculateResults();
+}
+
+async function saveResult(){
+    try{
+        const rows=[...document.querySelectorAll("#resultBody tr")];
+        const resultData=[];
+        rows.forEach((row,i)=>{
+            const student=exam.students[i];if(!student)return;
+            row.querySelectorAll(".marks").forEach((input,j)=>{
+                if(input.value!=="") resultData.push({exam_id:exam.id,exam_student_id:student.id,subject:exam.subjects[j],marks:Number(input.value)});
+            });
+        });
+        if(!resultData.length){alert("Please enter marks first.");return}
+        const {error}=await db.from("results").upsert(resultData,{onConflict:"exam_id,exam_student_id,subject"});
+        if(error)throw error;
+        calculateResults();alert("Result saved successfully!");
+    }catch(e){console.error(e);alert("Result save nahi hua: "+e.message)}
+}
+
+function addStudent(){
+    const tbody=document.getElementById("resultBody");
+    tbody.insertAdjacentHTML("beforeend",createStudentRow(tbody.rows.length+1));
+    addMarkListeners();calculateResults();
+}
+
+function deleteStudent(btn){
+    const row=btn.closest("tr");if(!row)return;
+    if(!confirm("Kya is student ko delete karna hai?"))return;
+    row.remove();
+    document.querySelectorAll("#resultBody tr").forEach((r,i)=>r.cells[0].textContent=i+1);
+    calculateResults();
+}
+
+async function exportToExcel(){
+    if(typeof ExcelJS==="undefined"){alert("Excel system load nahi hua.");return}
+    calculateResults();
+    const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Result");
+    const headers=["S. No.","Roll No.","Student Name",...exam.subjects,"TOTAL","%AGE","RESULT","RANK"];
+    headers.forEach((h,i)=>{ws.getCell(1,i+1).value=h;ws.getCell(1,i+1).font={bold:true};ws.getCell(1,i+1).border={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}}});
+    getStudentData().forEach((s,i)=>{
+        [i+1,s.roll,s.name,...s.marks.map(m=>m??""),s.total,s.hasMarks?s.percentage.toFixed(2)+"%":"",s.result,s.rank].forEach((v,j)=>ws.getCell(i+2,j+1).value=v);
+    });
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="JNV_Result.xlsx";a.click();URL.revokeObjectURL(url);
+}
+
+function getStudentData(){
+    const maxTotal=exam.subjectDetails.reduce((a,s)=>a+Number(s.max_marks||0),0);
+    return [...document.querySelectorAll("#resultBody tr")].map(row=>{
+        const marks=[...row.querySelectorAll(".marks")].map(i=>i.value===""?null:Number(i.value));
+        const total=marks.reduce((a,m)=>a+(m??0),0);
+        return {row,roll:row.querySelector(".roll-number").value.trim(),name:row.querySelector(".student-name").value.trim(),marks,total,percentage:maxTotal?(total/maxTotal)*100:0,hasMarks:marks.some(m=>m!==null),result:row.querySelector(".result").textContent,rank:row.querySelector(".rank").textContent};
+    });
+}
+
+loadExam();
+</script>
+</body>
+</html>

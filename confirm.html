@@ -1,1 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Confirming...</title>
+</head>
+<body>
 
+<p id="status">Confirming your email...</p>
+
+<script src="supabase.js"></script>
+
+<script>
+async function confirmUser() {
+
+    const { data, error } = await db.auth.getSession();
+
+    if (error || !data.session) {
+        document.getElementById("status").textContent =
+            "Email confirmation failed. Please try again.";
+        return;
+    }
+
+    const user = data.session.user;
+
+    const { data: school, error: schoolError } = await db
+        .from("schools")
+        .select("*")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+    if (schoolError || !school) {
+        document.getElementById("status").textContent =
+            "School account not found.";
+        return;
+    }
+
+    localStorage.setItem("jnv_logged_in", "true");
+    localStorage.setItem("jnv_user_role", "admin");
+    localStorage.setItem("jnv_school_id", school.id);
+    localStorage.setItem("jnv_logged_school", JSON.stringify(school));
+
+    window.location.replace("main-dashboard.html");
+}
+
+confirmUser();
+</script>
+
+</body>
+</html>
